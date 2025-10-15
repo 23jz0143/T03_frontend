@@ -1,33 +1,46 @@
 import { Admin, Resource } from "react-admin";
+import type { DataProvider } from "react-admin";
 import jsonServerProvider from "ra-data-json-server";
 import { UserList } from "./users";
 import { UserEdit } from "./UserEdit";
 import { UserCreate } from "./userCreate";
 import { AccountCircle } from "@mui/icons-material";
+import { Approval_pendingList } from "./approval_pending";
+import { AdvertisementsList } from "./AdvertisementsList";
 
 const listBaseUrl = "/api/admin/companies"; 
 
-const customDataProvider = {
+const customDataProvider: DataProvider = {
   ...jsonServerProvider(listBaseUrl),
 
   getList: async (resource, params) => {
-    const response = await fetch(`${listBaseUrl}/accounts`, {
+    let url = `${listBaseUrl}/accounts`;
+  
+    // リソース名に応じてエンドポイントを切り替える
+    if (resource === "pendings") {
+      url = "/api/admin/advertisements/pendings";
+    } else if (resource === "advertisements") {
+      const year = params.filter?.year || new Date().getFullYear(); // 年号を取得（デフォルトは現在の年）
+      url = `/api/admin/advertisements?year=${year}`;
+    }
+  
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
     });
-
+  
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
+  
     const total = response.headers.get("X-Total-Count");
     const data = await response.json();
-
+  
     return {
       data: Array.isArray(data)
-        ? data.map((item, index) => ({ ...item, id: item.id || index + 1 }))
-        : [{ ...data, id: 1 }],
+        ? data.map((item) => ({ ...item, id: item.id }))
+        : [{ ...data, id: data.id }],
       total: total ? parseInt(total, 10) : Array.isArray(data) ? data.length : 1,
     };
   },
@@ -44,10 +57,7 @@ const customDataProvider = {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const data = await response.json();
-
-    // 配列が返ってきた場合、最初の要素を使用して id を付与
-    const record = Array.isArray(data) ? { ...data[0], id: data[0]?.id || id } : { ...data, id };
-    return { data: record };
+    return { data };
   },
 
   create: async (resource, { data }) => {
@@ -59,15 +69,19 @@ const customDataProvider = {
       },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error Response Body:", errorText);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
+  
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  
     const responseData = await response.json();
-    return { data: { ...responseData, id: responseData.id || new Date().getTime() } };
+    console.log("Server Response:", responseData); // サーバーのレスポンスを確認
+  
+    // サーバーが単一の ID を返す場合、それを加工して返す
+    if (typeof responseData === "number") {
+      return { data: { id: responseData, ...data } };
+    }
+  
+    // サーバーがオブジェクト形式でデータを返す場合
+    return { data: responseData };
   },
 
   update: async (resource, { id, data }) => {
@@ -83,27 +97,30 @@ const customDataProvider = {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const responseData = await response.json();
-    return { data: { ...responseData, id } };
+    return { data: responseData };
   },
 
   delete: async (resource, { id }) => {
-    const response = await fetch(`${listBaseUrl}/companies/accounts/${id}`, {
+    const response = await fetch(`${listBaseUrl}/${id}/accounts/}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
     });
-
+  
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    return { data: { id } };
+  
+    // RecordType に準拠する形でデータを返す
+    return { data: { id } as RaRecord };
   },
 };
 
 const App = () => (
   <Admin dataProvider={customDataProvider}>
         <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate} icon={AccountCircle} />
+        <Resource name="pendings" list={Approval_pendingList} />
+        <Resource name="advertisements" list={AdvertisementsList} />
   </Admin>
 );
 
