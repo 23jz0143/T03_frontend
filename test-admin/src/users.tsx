@@ -12,12 +12,12 @@ export const UserList = () => {
           secondaryText={(record) => record.company_name}
         />
       ) : (
-        <Datagrid rowClick=""> {/* 行全体をクリックしても何もしない */}
+        <Datagrid rowClick=""> 
           <TextField source="id" />
           <TextField source="account_name" />
           <TextField source="company_name" />
           <TextField source="password" />
-          <EditButton label="編集"/> {/* このボタンを押したときのみ編集画面に遷移 */}
+          <EditButton label="編集"/> 
         </Datagrid>
       )}
     </List>
