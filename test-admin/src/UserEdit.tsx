@@ -5,7 +5,7 @@ export const UserEdit = () => (
     <SimpleForm>
       <TextInput source="id"  disabled/>
       <TextInput source="account_name" />
-      <TextInput source="company_name" />
+      <TextInput source="company_name" disabled/>
       <TextInput source="password" />
     </SimpleForm>
   </Edit>
