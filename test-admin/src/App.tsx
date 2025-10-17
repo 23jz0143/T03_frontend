@@ -85,7 +85,7 @@ const customDataProvider: DataProvider = {
   },
 
   update: async (resource, { id, data }) => {
-    const response = await fetch(`${listBaseUrl}/${id}/accounts/`, {
+    const response = await fetch(`${listBaseUrl}/${id}/accounts`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -101,19 +101,65 @@ const customDataProvider: DataProvider = {
   },
 
   delete: async (resource, { id }) => {
-    const response = await fetch(`${listBaseUrl}/${id}/accounts/}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+    const url = `${listBaseUrl}/${id}/accounts`;
+    console.log("DELETE Request URL:", url);
+  
+    try {
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+  
+      // レスポンスのステータスコードをログに出力
+      console.log("DELETE Response Status:", response.status);
+  
+      // レスポンスが失敗した場合のエラーハンドリング
+      if (!response.ok) {
+        const errorText = await response.text(); // レスポンスのエラーメッセージを取得
+        console.error("DELETE Error Response:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+  
+      // 成功時のレスポンスをログに出力
+      console.log("DELETE Success Response:", await response.json());
+  
+      // RecordType に準拠する形でデータを返す
+      return { data: { id } as RaRecord };
+    } catch (error) {
+      // ネットワークエラーやその他のエラーをキャッチ
+      console.error("DELETE Request Failed:", error);
+      throw error; // エラーを再スローして呼び出し元で処理
+    }
+  },
+
+  deleteMany: async (resource, { ids }) => {
+    const responses = await Promise.all(
+      ids.map((id) =>
+        fetch(`${listBaseUrl}/${id}/accounts`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        })
+      )
+      
+    );
+  
+    // エラーがある場合は例外をスロー
+    responses.forEach((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     });
   
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  
-    // RecordType に準拠する形でデータを返す
-    return { data: { id } as RaRecord };
+    // 削除された ID を返す
+    return { data: ids };
   },
+
 };
 
 const App = () => (
