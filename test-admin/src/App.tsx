@@ -45,7 +45,7 @@ const customDataProvider: DataProvider = {
     };
   },
 
-  getOne: async (resource, { id }) => {
+  getOne: async (_, { id }) => {
     const response = await fetch(`${listBaseUrl}/${id}/accounts`, {
       method: "GET",
       headers: {
@@ -61,30 +61,34 @@ const customDataProvider: DataProvider = {
   },
 
   create: async (resource, { data }) => {
-    const response = await fetch(`${listBaseUrl}/accounts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(`${listBaseUrl}/accounts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(data),
+      });
   
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text(); // サーバーからのエラーメッセージを取得
+        console.error("CREATE Error Response:", errorText);
   
-    const responseData = await response.json();
-    console.log("Server Response:", responseData); // サーバーのレスポンスを確認
+        throw new Error();
+      }
   
-    // サーバーが単一の ID を返す場合、それを加工して返す
-    if (typeof responseData === "number") {
-      return { data: { id: responseData, ...data } };
+      const responseData = await response.json();
+      console.log("CREATE Success Response:", responseData);
+  
+      return { data: responseData };
+    } catch (error) {
+      console.error("CREATE Request Failed:", error);
+      throw error; // エラーを再スローして呼び出し元で処理
     }
-  
-    // サーバーがオブジェクト形式でデータを返す場合
-    return { data: responseData };
   },
 
-  update: async (resource, { id, data }) => {
+  update: async (_, { id, data }) => {
     const response = await fetch(`${listBaseUrl}/${id}/accounts`, {
       method: "PUT",
       headers: {
@@ -100,7 +104,7 @@ const customDataProvider: DataProvider = {
     return { data: responseData };
   },
 
-  delete: async (resource, { id }) => {
+  delete: async (_, { id }) => {
     const url = `${listBaseUrl}/${id}/accounts`;
     console.log("DELETE Request URL:", url);
   
@@ -135,7 +139,7 @@ const customDataProvider: DataProvider = {
     }
   },
 
-  deleteMany: async (resource, { ids }) => {
+  deleteMany: async (_, { ids }) => {
     const responses = await Promise.all(
       ids.map((id) =>
         fetch(`${listBaseUrl}/${id}/accounts`, {
