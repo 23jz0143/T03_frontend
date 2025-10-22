@@ -7,6 +7,7 @@ import { UserCreate } from "./userCreate";
 import { AccountCircle } from "@mui/icons-material";
 import { Approval_pendingList } from "./approval_pending";
 import { AdvertisementsList } from "./AdvertisementsList";
+import { ApprovalPendingShow } from "./ApprovalPendingShow";
 
 const listBaseUrl = "/api/admin/companies"; 
 
@@ -168,8 +169,8 @@ const customDataProvider: DataProvider = {
 
 const App = () => (
   <Admin dataProvider={customDataProvider}>
-        <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate} icon={AccountCircle} />
-        <Resource name="pendings" list={Approval_pendingList} />
+        <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate}  icon={AccountCircle} />
+        <Resource name="pendings" list={Approval_pendingList} show={ApprovalPendingShow}/>
         <Resource name="advertisements" list={AdvertisementsList} />
   </Admin>
 );
