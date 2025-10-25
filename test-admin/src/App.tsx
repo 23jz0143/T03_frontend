@@ -46,17 +46,30 @@ const customDataProvider: DataProvider = {
     };
   },
 
-  getOne: async (_, { id }) => {
-    const response = await fetch(`${listBaseUrl}/${id}/accounts`, {
+  getOne: async (resource, params) => {
+    let url;
+  
+    // リソースに応じてエンドポイントを切り替える
+    if (resource === "pendings") {
+      const { id } = params; // params から company_id を取得
+      if (!id) {
+        throw new Error("company_id is required for pendings resource");
+      }
+      url = `/api/companies/1/advertisements/${id}`;
+    } else {
+      url = `${listBaseUrl}/${params.id}/accounts`;
+    }
+  
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
     });
-
+  
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
+  
     const data = await response.json();
     return { data };
   },
