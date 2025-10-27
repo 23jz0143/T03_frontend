@@ -1,5 +1,5 @@
 import { Admin, Resource } from "react-admin";
-import type { DataProvider } from "react-admin";
+import type { DataProvider, RaRecord } from "react-admin";
 import jsonServerProvider from "ra-data-json-server";
 import { UserList } from "./users";
 import { UserEdit } from "./UserEdit";
@@ -8,6 +8,7 @@ import { AccountCircle } from "@mui/icons-material";
 import { Approval_pendingList } from "./approval_pending";
 import { AdvertisementsList } from "./AdvertisementsList";
 import { ApprovalPendingShow } from "./ApprovalPendingShow";
+import { AdvertisementsShow } from "./AdvertisementsShow";
 
 const listBaseUrl = "/api/admin/companies"; 
 
@@ -21,10 +22,10 @@ const customDataProvider: DataProvider = {
     if (resource === "pendings") {
       url = "/api/admin/advertisements/pendings";
     } else if (resource === "advertisements") {
-      const year = params.filter?.year || new Date().getFullYear(); // 年号を取得（デフォルトは現在の年）
-      url = `/api/admin/advertisements?year=${year}`;
-    }
-  
+      const year =
+      (params?.filter as any)?.year ?? new Date().getFullYear();
+    url = `/api/admin/advertisements?year=${year}`;
+  }
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -50,7 +51,7 @@ const customDataProvider: DataProvider = {
     let url;
   
     // リソースに応じてエンドポイントを切り替える
-    if (resource === "pendings") {
+    if (resource === "pendings" || resource === "advertisements") {
       const { id } = params; // params から company_id を取得
       if (!id) {
         throw new Error("company_id is required for pendings resource");
@@ -184,7 +185,7 @@ const App = () => (
   <Admin dataProvider={customDataProvider}>
         <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate}  icon={AccountCircle} />
         <Resource name="pendings" list={Approval_pendingList} show={ApprovalPendingShow}/>
-        <Resource name="advertisements" list={AdvertisementsList} />
+        <Resource name="advertisements" list={AdvertisementsList} show={AdvertisementsShow} />
   </Admin>
 );
 

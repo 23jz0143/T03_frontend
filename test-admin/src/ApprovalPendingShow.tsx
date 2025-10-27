@@ -1,7 +1,4 @@
-import { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
-import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, ArrayField, ChipField, DateField } from "react-admin";
-import { getOnePendings } from "./getOnePendings";
+import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, ArrayField, ChipField, DateField, UrlField } from "react-admin";
 
 export const ApprovalPendingShow = () => {
   // const { id, company_id } = useParams<{ id: string; company_id: string }>();
@@ -54,7 +51,7 @@ export const ApprovalPendingShow = () => {
       <NumberField source="average_overtime" label="平均残業時間" />
       <NumberField source="average_paid_vacation" label="平均有給休暇日数" />
       <TextField source="briefing_info" label="説明会情報" />
-      <TextField source="homepage_url" label="ホームページURL" />
+      <UrlField source="homepage_url" label="ホームページURL" />
       <BooleanField source="international_student_recruitment" label="留学生採用" />
       <TextField source="job_recruiter_name" label="採用担当者名" />
       <NumberField source="recruiting_count" label="募集人数" />
@@ -66,7 +63,7 @@ export const ApprovalPendingShow = () => {
       </ArrayField>
       <DateField source="created_at" label="作成日" />
       <DateField source="updated_at" label="更新日" />
-      <NumberField source="year" label="年" />
+      <NumberField source="year" label="年"  options={{ useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 0 }} />
     </SimpleShowLayout>
   </Show>
 );

@@ -1,6 +1,5 @@
 import { useMediaQuery } from "@mui/material";
 import { Datagrid, TextField, SimpleList, List } from "react-admin";
-import { useNavigate } from "react-router-dom";
 
 export const Approval_pendingList = () => {
   const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm"));
