@@ -7,9 +7,7 @@ import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 
-// ...existing code...
 export const AdvertisementsShow = () => {
-  // 各要素の共通スタイル（暗めグレー + 余白 + 枠線 + 文字色）
   const fieldBoxSx = {
     p: 2,
     bgcolor: "grey.900",
@@ -29,7 +27,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="ID">
-                  <TextField source="id" />
+                  <TextField source="id" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -37,7 +35,12 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="会社名">
-                  <FunctionField render={(record: any) => record?.company_name ?? record?.company?.name ?? ""} />
+                  <FunctionField
+                    render={(r: any) => {
+                      const v = r?.company_name ?? r?.company?.name;
+                      return v ? v : "未登録";
+                    }}
+                  />
                 </Labeled>
               </Box>
             </Grid>
@@ -45,7 +48,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="Company ID">
-                  <TextField source="company_id" />
+                  <TextField source="company_id" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -53,7 +56,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="平均年齢">
-                  <NumberField source="average_age" />
+                  <NumberField source="average_age" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -61,7 +64,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="平均勤続年数">
-                  <NumberField source="average_continued_service" />
+                  <NumberField source="average_continued_service" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -69,7 +72,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="平均残業時間">
-                  <NumberField source="average_overtime" />
+                  <NumberField source="average_overtime" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -77,7 +80,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="平均有給休暇日数">
-                  <NumberField source="average_paid_vacation" />
+                  <NumberField source="average_paid_vacation" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -85,7 +88,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} md={8}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="説明会情報">
-                  <TextField source="briefing_info" />
+                  <TextField source="briefing_info" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -93,7 +96,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="ホームページURL">
-                  <UrlField source="homepage_url" />
+                  <UrlField source="homepage_url" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -101,7 +104,15 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="留学生採用">
-                  <BooleanField source="international_student_recruitment" />
+                  <FunctionField
+                    render={(r: any) =>
+                      r?.international_student_recruitment === true
+                        ? "はい"
+                        : r?.international_student_recruitment === false
+                        ? "いいえ"
+                        : "未登録"
+                    }
+                  />
                 </Labeled>
               </Box>
             </Grid>
@@ -109,7 +120,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="採用担当者名">
-                  <TextField source="job_recruiter_name" />
+                  <TextField source="job_recruiter_name" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -117,7 +128,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="募集人数">
-                  <NumberField source="recruiting_count" />
+                  <NumberField source="recruiting_count" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -125,7 +136,7 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6} md={4}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="採用数">
-                  <NumberField source="recruitment" />
+                  <NumberField source="recruitment" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
@@ -145,7 +156,7 @@ export const AdvertisementsShow = () => {
                     ))}
                   </Stack>
                 ) : (
-                  <Typography sx={{ color: "grey.300" }}>タグはありません</Typography>
+                  "未登録"
                 )
               }
             />
@@ -159,27 +170,30 @@ export const AdvertisementsShow = () => {
             <Grid item xs={12} sm={6}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="作成日">
-                  <DateField source="created_at" />
+                  <DateField source="created_at" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="更新日">
-                  <DateField source="updated_at" />
+                  <DateField source="updated_at" emptyText="未登録" />
                 </Labeled>
               </Box>
             </Grid>
             <Grid item xs={12} sm={6}>
               <Box sx={fieldBoxSx}>
                 <Labeled label="年">
-                  <NumberField source="year" options={{ useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 0 }} />
+                  <NumberField
+                    source="year"
+                    emptyText="未登録"
+                    options={{ useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 0 }}
+                  />
                 </Labeled>
               </Box>
             </Grid>
           </Grid>
         </Paper>
-        {/* ...existing code... */}
       </Container>
     </Show>
   );
