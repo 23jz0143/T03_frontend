@@ -1,6 +1,7 @@
 import { Show, SimpleShowLayout, TextField, NumberField, BooleanField, ArrayField, 
-          ChipField, DateField, UrlField, useRecordContext, useNotify } from "react-admin";
+  SingleFieldList, DateField, UrlField, useRecordContext, useNotify, FunctionField } from "react-admin";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -108,10 +109,15 @@ export const ApprovalPendingShow = () => {
         <TextField source="job_recruiter_name" label="採用担当者名" />
         <NumberField source="recruiting_count" label="募集人数" />
         <NumberField source="recruitment" label="採用数" />
-        <ArrayField source="tags" label="タグ">
+        {/* <ArrayField source="tags" label="タグ">
           <SimpleShowLayout>
             <ChipField source="" />
           </SimpleShowLayout>
+        </ArrayField> */}
+        <ArrayField source="tags" label="タグ">
+          <SingleFieldList linkType={false}>
+            <FunctionField render={(tag: any) => <Chip label={String(tag)} size="small" />} />
+          </SingleFieldList>
         </ArrayField>
         <DateField source="created_at" label="作成日" />
         <DateField source="updated_at" label="更新日" />

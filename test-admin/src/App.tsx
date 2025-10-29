@@ -9,25 +9,27 @@ import { Approval_pendingList } from "./approval_pending";
 import { AdvertisementsList } from "./AdvertisementsList";
 import { ApprovalPendingShow } from "./ApprovalPendingShow";
 import { AdvertisementsShow } from "./AdvertisementsShow";
+import { RequirementShow } from "./RequirementShow";
 
 const listBaseUrl = "/api/admin/companies"; 
 
 const baseProvider = jsonServerProvider(listBaseUrl);
+
+const logDP = (...args: any[]) => console.debug("[DP]", ...args);
+
 
 const customDataProvider: DataProvider = {
   ...baseProvider,
 
   getList: async (resource, params) => {
     let url = `${listBaseUrl}/accounts`;
-  
-    // リソース名に応じてエンドポイントを切り替える
+    // ...existing code...
     if (resource === "pendings") {
       url = "/api/admin/advertisements/pendings";
     } else if (resource === "advertisements") {
-      const year =
-      (params?.filter as any)?.year ?? new Date().getFullYear();
-    url = `/api/admin/advertisements?year=${year}`;
-  }
+      const year = (params?.filter as any)?.year ?? new Date().getFullYear();
+      url = `/api/admin/advertisements?year=${year}`;
+    }
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -35,12 +37,21 @@ const customDataProvider: DataProvider = {
         Accept: "application/json",
       },
     });
-  
+
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  
+
     const total = response.headers.get("X-Total-Count");
     const data = await response.json();
-  
+
+    // 追加: 一覧のレコードから id -> company_id をキャッシュ
+    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(data)) {
+      data.forEach((item: any) => {
+        if (item?.id != null && item?.company_id != null) {
+          sessionStorage.setItem(`advCompany:${item.id}`, String(item.company_id));
+        }
+      });
+    }
+
     return {
       data: Array.isArray(data)
         ? data.map((item) => ({ ...item, id: item.id }))
@@ -49,60 +60,96 @@ const customDataProvider: DataProvider = {
     };
   },
 
+
   getOne: async (resource, params) => {
-    let url;
-  
-    // リソースに応じてエンドポイントを切り替える
+    let url: string;
+
     if (resource === "pendings" || resource === "advertisements") {
-      const { id } = params; // params から company_id を取得
-      if (!id) {
-        throw new Error("company_id is required for pendings resource");
+      const { id } = params as any;
+      if (!id) throw new Error("id is required");
+      const companyId = sessionStorage.getItem(`advCompany:${id}`);
+      logDP("getOne", resource, { id, companyId });
+      if (!companyId) throw new Error("company_id が不明です。一覧からレコードを開いてください。");
+      url = `/api/companies/${companyId}/advertisements/${id}`;
+    } else if (resource === "requirements") {
+      const { id } = params as any;
+      if (!id) throw new Error("id is required");
+
+      const advId = sessionStorage.getItem(`reqAdv:${id}`);
+      const companyId =
+        sessionStorage.getItem(`reqCompany:${id}`) ||
+        (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
+
+      logDP("getOne requirements", { id, advId, companyId });
+
+      if (!advId || !companyId) {
+        throw new Error("参照情報が不足しています。求人票から募集要項を開いてください。");
       }
-      url = `/api/companies/1/advertisements/${id}`;
+
+      url = `/api/companies/${companyId}/advertisements/${advId}/requirements/${id}`;
     } else {
-      url = `${listBaseUrl}/${params.id}/accounts`;
+      url = `${listBaseUrl}/${(params as any).id}/accounts`;
+      logDP("getOne (fallback)", resource, params, url);
     }
-  
+
+    sessionStorage.setItem("lastFetchedUrl", url);
+    logDP("GET", url);
+
+    const startedAt = performance.now();
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
     });
-  
+    const dur = Math.round(performance.now() - startedAt);
+    logDP("resp", response.status, response.statusText, `${dur}ms`);
+
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-  
+
     const data = await response.json();
-    return { data };
+    logDP("data keys", Object.keys(data));
+
+    return { data: { ...data, _full: true } };
   },
 
-  getManyReference: async (resource, params) => {
-    if (resource === "requirements") {
-      const advertisementId =
-        params.id || params.targetId || params.filter?.advertisement_id;
 
-      if (!advertisementId) {
-        throw new Error("advertisement_id が指定されていません");
-      }
 
-      const url = `/api/companies/1/advertisements/${advertisementId}/requirements`;
+getManyReference: async (resource, params) => {
+  if (resource === "requirements") {
+    const advertisementId =
+      (params as any).id ?? (params as any).targetId ?? (params as any).filter?.advertisement_id;
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch requirements: ${response.statusText}`);
-      }
+    logDP("getManyReference requirements params", params, { advertisementId });
 
-      const data = await response.json();
-      return {
-        data,
-        total: data.length,
-      };
+    if (!advertisementId) throw new Error("advertisement_id が指定されていません");
+
+    const companyId = sessionStorage.getItem(`advCompany:${advertisementId}`);
+    logDP("sessionStorage advCompany", { [`advCompany:${advertisementId}`]: companyId });
+
+    if (!companyId) throw new Error("company_id が不明です。広告一覧からレコードを開いてください。");
+
+    const url = `/api/companies/${companyId}/advertisements/${advertisementId}/requirements`;
+    logDP("GET", url);
+
+    const response = await fetch(url, { headers: { Accept: "application/json" } });
+    logDP("resp", response.status, response.statusText);
+
+    if (!response.ok) throw new Error(`Failed to fetch requirements: ${response.statusText}`);
+    const data = await response.json();
+    logDP("data len", Array.isArray(data) ? data.length : 0);
+
+    if (Array.isArray(data)) {
+      data.forEach((req: any) => {
+        if (req?.id != null) {
+          sessionStorage.setItem(`reqAdv:${req.id}`, String(advertisementId));
+          sessionStorage.setItem(`reqCompany:${req.id}`, String(companyId));
+        }
+      });
     }
 
-    // 他のリソースは通常処理
-    return baseProvider.getManyReference(resource, params);
-  },
+    return { data, total: Array.isArray(data) ? data.length : 0 };
+  }
+  return baseProvider.getManyReference(resource, params);
+},
 
 
   create: async (resource, { data }) => {
@@ -216,6 +263,7 @@ const App = () => (
         <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate}  icon={AccountCircle} />
         <Resource name="pendings" list={Approval_pendingList} show={ApprovalPendingShow}/>
         <Resource name="advertisements" list={AdvertisementsList} show={AdvertisementsShow} />
+        <Resource name="requirements" show={RequirementShow} />
   </Admin>
 );
 
