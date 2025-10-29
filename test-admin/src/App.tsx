@@ -12,8 +12,10 @@ import { AdvertisementsShow } from "./AdvertisementsShow";
 
 const listBaseUrl = "/api/admin/companies"; 
 
+const baseProvider = jsonServerProvider(listBaseUrl);
+
 const customDataProvider: DataProvider = {
-  ...jsonServerProvider(listBaseUrl),
+  ...baseProvider,
 
   getList: async (resource, params) => {
     let url = `${listBaseUrl}/accounts`;
@@ -74,6 +76,34 @@ const customDataProvider: DataProvider = {
     const data = await response.json();
     return { data };
   },
+
+  getManyReference: async (resource, params) => {
+    if (resource === "requirements") {
+      const advertisementId =
+        params.id || params.targetId || params.filter?.advertisement_id;
+
+      if (!advertisementId) {
+        throw new Error("advertisement_id が指定されていません");
+      }
+
+      const url = `/api/companies/1/advertisements/${advertisementId}/requirements`;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch requirements: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return {
+        data,
+        total: data.length,
+      };
+    }
+
+    // 他のリソースは通常処理
+    return baseProvider.getManyReference(resource, params);
+  },
+
 
   create: async (resource, { data }) => {
     try {
