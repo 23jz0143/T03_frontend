@@ -260,9 +260,9 @@ getManyReference: async (resource, params) => {
 
 const App = () => (
   <Admin dataProvider={customDataProvider}>
-        <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate}  icon={AccountCircle} />
-        <Resource name="pendings" list={Approval_pendingList} show={ApprovalPendingShow}/>
-        <Resource name="advertisements" list={AdvertisementsList} show={AdvertisementsShow} />
+        <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate}  icon={AccountCircle} options={{ label: 'アカウント' }} />
+        <Resource name="pendings" list={Approval_pendingList} show={ApprovalPendingShow} options={{ label: '公開許可待ち' }} />
+        <Resource name="advertisements" list={AdvertisementsList} show={AdvertisementsShow} options={{ label: '求人票一覧' }} />
         <Resource name="requirements" show={RequirementShow} />
   </Admin>
 );

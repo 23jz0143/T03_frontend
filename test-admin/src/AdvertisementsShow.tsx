@@ -43,12 +43,14 @@ return (
   }
 />
 
-<ArrayField source="starting_salaries" label="初任給">
+{/* <ArrayField source="starting_salaries" label="初任給">
   <Datagrid bulkActionButtons={false}>
     <TextField source="target" label="対象" />
     <NumberField source="monthly_salary" label="月給" options={{ style: "currency", currency: "JPY" }} />
   </Datagrid>
-</ArrayField>
+</ArrayField> */}
+
+<NumberField source="starting_salary_second" label="月給(2年卒)" options={{ style: "currency", currency: "JPY" }} />
 
 <DateField source="updated_at" label="更新日" />
 
@@ -62,7 +64,7 @@ return (
 };
 
 export const AdvertisementsShow = () => (
-<Show>
+<Show title="求人票詳細">
 <SimpleShowLayout>
 <TextField source="id" label="ID" />
 <FunctionField
