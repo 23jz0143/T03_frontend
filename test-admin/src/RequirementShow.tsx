@@ -53,7 +53,7 @@ export const RequirementShow = () => {
   }, [refresh]);
 
   return (
-    <Show queryOptions={{ staleTime: 0, gcTime: 0 }}>
+    <Show title="募集要項詳細" queryOptions={{ staleTime: 0, gcTime: 0 }}>
       <FullRecordGate>
         <TabbedShowLayout>
           <TabbedShowLayout.Tab label="概要">
@@ -98,13 +98,22 @@ export const RequirementShow = () => {
 
           <TabbedShowLayout.Tab label="給与・福利厚生">
             {/* 初任給はテーブルで見やすく */}
-            <ArrayField source="starting_salaries" label="初任給">
+            {/* <ArrayField source="starting_salaries" label="初任給">
               <Datagrid bulkActionButtons={false}>
                 <TextField source="target" label="対象" />
                 <NumberField source="monthly_salary" label="月給" options={{ style: "currency", currency: "JPY" }} />
               </Datagrid>
+            </ArrayField> */}
+            <NumberField source="starting_salary_first" label="月給（1年卒）" options={{ style: "currency", currency: "JPY" }} />
+            <NumberField source="starting_salary_second" label="月給（2年卒）" options={{ style: "currency", currency: "JPY" }} />
+            <NumberField source="starting_salary_third" label="月給（3年卒）" options={{ style: "currency", currency: "JPY" }} />
+            <NumberField source="starting_salary_fourth" label="月給（4年卒）" options={{ style: "currency", currency: "JPY" }} />
+            <ArrayField source="various_allowances" label="各種手当">
+              <Datagrid bulkActionButtons={false}>
+                <TextField source="name" label="対象" />
+                <NumberField source="allowance" label="金額" options={{ style: "currency", currency: "JPY" }} />
+              </Datagrid>
             </ArrayField>
-            <TextField source="various_allowances" label="各種手当" emptyText="未登録" />
             <ArrayField source="welfare_benefits" label="福利厚生">
               <SingleFieldList linkType={false}>
                 <FunctionField render={(v: any) => <Chip size="small" label={String(v)} />} />
@@ -119,6 +128,10 @@ export const RequirementShow = () => {
                 <FunctionField render={(v: any) => <Chip size="small" label={String(v)} />} />
               </SingleFieldList>
             </ArrayField>
+          </TabbedShowLayout.Tab>
+          
+          <TabbedShowLayout.Tab label="備考">
+            <TextField source="note" label="備考" />
           </TabbedShowLayout.Tab>
 
           <TabbedShowLayout.Tab label="メタ情報">

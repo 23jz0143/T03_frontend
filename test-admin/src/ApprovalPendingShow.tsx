@@ -86,7 +86,7 @@ const PendingGuard = () => {
 
 export const ApprovalPendingShow = () => {
   return (
-    <Show>
+    <Show title="公開許可待ち詳細">
       {/* 戻るで来たときのガード */}
       <PendingGuard />
 
