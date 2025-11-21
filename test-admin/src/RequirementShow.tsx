@@ -1,8 +1,10 @@
-import { Show, TabbedShowLayout, TextField, DateField, NumberField, FunctionField, useShowContext, useRefresh, SingleFieldList, Datagrid, ArrayField  } from "react-admin";
+import { Show, TabbedShowLayout, TextField, DateField, NumberField, FunctionField, useShowContext, useRefresh, SingleFieldList, Datagrid, ArrayField, RecordContextProvider, useRecordContext, TopToolbar, EditButton, Button} from "react-admin";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import { useEffect } from "react";
 import Chip from "@mui/material/Chip";
+import { Link, useParams } from "react-router-dom";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const DEBUG = true;
 const dlog = (...args: any[]) => DEBUG && console.debug("[RequirementShow]", ...args);
@@ -30,6 +32,70 @@ const FullRecordGate: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const SalaryDatagridSection: React.FC = () => {
+  const record = useRecordContext<any>();
+  if (!record) return null;
+
+  const rows = [
+      { label: "月給(1年卒)", value: record.starting_salary_first },
+      { label: "月給(2年卒)", value: record.starting_salary_second },
+      { label: "月給(3年卒)", value: record.starting_salary_third },
+      { label: "月給(4年卒)", value: record.starting_salary_fourth },
+  ];
+
+  // ArrayField に渡すため、一時的に record に salary_rows を載せる
+  return (
+      <RecordContextProvider value={{ ...record, salary_rows: rows }}>
+          <ArrayField source="salary_rows" label="月給">
+              <Datagrid bulkActionButtons={false}>
+                  <TextField source="label" label="区分" />
+                  <NumberField
+                      source="value"
+                      label="金額"
+                      options={{ style: "currency", currency: "JPY" }}
+                      emptyText="未登録"
+                      textAlign="right"
+                  />
+              </Datagrid>
+          </ArrayField>
+      </RecordContextProvider>
+  );
+};
+
+const RequirementShowActions = () => {
+  const record = useRecordContext();
+  const { id } = useParams();
+  if (!record || !record.advertisement_id) {
+      console.log("no record or no advertisement_id", record);
+  }
+
+  const advertisementId = record?.advertisement_id || (id ? sessionStorage.getItem(`reqAdv:${id}`) : null);
+
+  useEffect(() => {
+      console.log("Actions render. ID:", id, " advID:", advertisementId, " record:", record);
+  }, [record, id, advertisementId]);
+  if (!advertisementId) {
+      console.log("no advertisement_id in record", record);
+  }
+
+  return (
+      <TopToolbar sx={{ justifyContent: "space-between" }}>
+          <Box>
+              {advertisementId && (
+                  <Button
+                      component = {Link}
+                      to = {`/advertisements/${advertisementId}/show`}
+                      startIcon = {<ArrowBackIcon />}
+                      label = "求人票に戻る"
+                  />
+              )}
+          </Box>
+          <EditButton />
+      </TopToolbar>
+  )
+}
+
+
 export const RequirementShow = () => {
   const refresh = useRefresh();
 
@@ -53,7 +119,7 @@ export const RequirementShow = () => {
   }, [refresh]);
 
   return (
-    <Show title="募集要項詳細" queryOptions={{ staleTime: 0, gcTime: 0 }}>
+    <Show title="募集要項詳細" queryOptions={{ staleTime: 0, gcTime: 0 }} actions={<RequirementShowActions />}>
       <FullRecordGate>
         <TabbedShowLayout>
           <TabbedShowLayout.Tab label="概要">
@@ -97,17 +163,7 @@ export const RequirementShow = () => {
           </TabbedShowLayout.Tab>
 
           <TabbedShowLayout.Tab label="給与・福利厚生">
-            {/* 初任給はテーブルで見やすく */}
-            {/* <ArrayField source="starting_salaries" label="初任給">
-              <Datagrid bulkActionButtons={false}>
-                <TextField source="target" label="対象" />
-                <NumberField source="monthly_salary" label="月給" options={{ style: "currency", currency: "JPY" }} />
-              </Datagrid>
-            </ArrayField> */}
-            <NumberField source="starting_salary_first" label="月給（1年卒）" options={{ style: "currency", currency: "JPY" }} />
-            <NumberField source="starting_salary_second" label="月給（2年卒）" options={{ style: "currency", currency: "JPY" }} />
-            <NumberField source="starting_salary_third" label="月給（3年卒）" options={{ style: "currency", currency: "JPY" }} />
-            <NumberField source="starting_salary_fourth" label="月給（4年卒）" options={{ style: "currency", currency: "JPY" }} />
+            <SalaryDatagridSection />
             <ArrayField source="various_allowances" label="各種手当">
               <Datagrid bulkActionButtons={false}>
                 <TextField source="name" label="対象" />

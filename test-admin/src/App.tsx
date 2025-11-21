@@ -10,6 +10,7 @@ import { AdvertisementsList } from "./AdvertisementsList";
 import { ApprovalPendingShow } from "./ApprovalPendingShow";
 import { AdvertisementsShow } from "./AdvertisementsShow";
 import { RequirementShow } from "./RequirementShow";
+import { AdvertisementCreate } from "./assets/AdvertisementCreate";
 
 const listBaseUrl = "/api/admin/companies"; 
 
@@ -152,33 +153,67 @@ getManyReference: async (resource, params) => {
 },
 
 
-  create: async (resource, { data }) => {
-    try {
-      const response = await fetch(`${listBaseUrl}/accounts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-  
-      if (!response.ok) {
-        const errorText = await response.text(); // サーバーからのエラーメッセージを取得
-        console.error("CREATE Error Response:", errorText);
-  
-        throw new Error();
-      }
-  
-      const responseData = await response.json();
-      console.log("CREATE Success Response:", responseData);
-  
-      return { data: responseData };
-    } catch (error) {
-      console.error("CREATE Request Failed:", error);
-      throw error; // エラーを再スローして呼び出し元で処理
+create: async (resource, params) => {
+  let url: string;
+  let dataToSubmit: any;
+
+  if (resource === "accounts") {
+    // 管理画面でアカウントを作成
+    url = `${listBaseUrl}/accounts`;   // /api/admin/companies/accounts
+    dataToSubmit = {
+      ...params.data,
+    };
+  } else if (resource === "advertisements") {
+    // 管理画面で求人票を作成
+    const companyId = params.data.company_id;
+    if (!companyId) {
+      console.error("company_id が指定されていません:", params.data);
+      throw new Error("company_id が指定されていません。求人票作成フォームに company_id が必要です。");
     }
-  },
+
+    url = `/api/companies/${companyId}/advertisements`;
+
+    dataToSubmit = {
+      ...params.data,
+      company_id: Number(companyId),
+      pending: params.data.pending !== undefined ? Boolean(params.data.pending) : false,
+      tag_ids: Array.isArray(params.data.tag_ids)
+        ? params.data.tag_ids.map(Number)
+        : [],
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+  } else {
+    throw new Error(`リソース ${resource} の作成はサポートされていません。`);
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(dataToSubmit),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`CREATE Error (${resource}):`, errorText);
+      throw new Error(`作成に失敗しました: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log(`CREATE Success (${resource}):`, responseData);
+
+    return { data: { ...responseData, id: responseData.id } };
+  } catch (error) {
+    console.error("CREATE Request error:", error);
+    throw error;
+  }
+},
+
+
 
   update: async (_, { id, data }) => {
     const response = await fetch(`${listBaseUrl}/${id}/accounts`, {
@@ -262,7 +297,7 @@ const App = () => (
   <Admin dataProvider={customDataProvider}>
         <Resource name="accounts" list={UserList} edit={UserEdit} create={UserCreate}  icon={AccountCircle} options={{ label: 'アカウント' }} />
         <Resource name="pendings" list={Approval_pendingList} show={ApprovalPendingShow} options={{ label: '公開許可待ち' }} />
-        <Resource name="advertisements" list={AdvertisementsList} show={AdvertisementsShow} options={{ label: '求人票一覧' }} />
+        <Resource name="advertisements" list={AdvertisementsList} show={AdvertisementsShow} create={AdvertisementCreate} options={{ label: '求人票一覧' }} />
         <Resource name="requirements" show={RequirementShow} />
   </Admin>
 );
