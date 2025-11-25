@@ -1,7 +1,8 @@
-import { Show, SimpleShowLayout, TextField, NumberField, DateField, 
-  UrlField, SingleFieldList, FunctionField, ReferenceManyField, Datagrid, ArrayField, useRedirect, useRecordContext } from "react-admin";
-import { Chip, Button } from "@mui/material";
-
+import { Show, SimpleShowLayout, TextField, NumberField, DateField, TabbedShowLayout,
+  UrlField, SingleFieldList, FunctionField, ReferenceManyField, Datagrid, ArrayField, useRedirect, useRecordContext,
+  TopToolbar, Button } from "react-admin";
+import { Chip } from "@mui/material";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const RequirementDetailButton: React.FC<{ companyId?: string | number; advertisementId?: string | number }> = ({ companyId, advertisementId }) => {
   const row = useRecordContext<any>();
@@ -42,32 +43,25 @@ return (
     Array.isArray(r?.location) && r.location.length ? r.location.join("、") : "未登録"
   }
 />
-
-{/* <ArrayField source="starting_salaries" label="初任給">
-  <Datagrid bulkActionButtons={false}>
-    <TextField source="target" label="対象" />
-    <NumberField source="monthly_salary" label="月給" options={{ style: "currency", currency: "JPY" }} />
-  </Datagrid>
-</ArrayField> */}
-
 <NumberField source="starting_salary_second" label="月給(2年卒)" options={{ style: "currency", currency: "JPY" }} />
-
 <DateField source="updated_at" label="更新日" />
-
-{/* 詳細へ */}
-<FunctionField
-  label="詳細表示"
-  render={() => <RequirementDetailButton companyId={companyId} advertisementId={advertisementId} />}
-/>
 </Datagrid>
 );
 };
 
+const AdvertisementsShowActions = () => {
+  const redirect = useRedirect();
+  return (
+    <TopToolbar sx={{ justifyContent: "space-between" }}>
+      <Button startIcon = {<ArrowBackIcon />} label="一覧へ戻る" onClick={() => redirect("list", "advertisements")} />
+    </TopToolbar>
+  );
+};
+
 export const AdvertisementsShow = () => (
-<Show title="求人票詳細">
-<SimpleShowLayout>
-<TextField source="id" label="ID" />
-<TextField source="company_id" label="Company ID" />
+<Show title="求人票詳細" actions={<AdvertisementsShowActions />}>
+<TabbedShowLayout>
+<TabbedShowLayout.Tab label="概要">
 <FunctionField
   label="会社名"
   render={(r: any) => {
@@ -97,14 +91,20 @@ export const AdvertisementsShow = () => (
           <FunctionField render={(tag: any) => <Chip label={String(tag)} size="small" />} />
         </SingleFieldList>
       </ArrayField>
-
-<DateField source="created_at" label="作成日" />
-<DateField source="updated_at" label="更新日" />
-
-{/* -----------------------募集要項-------------------------- */}
+</TabbedShowLayout.Tab>
+<TabbedShowLayout.Tab label="募集要項一覧">
 <ReferenceManyField label="募集要項" reference="requirements" target="advertisement_id">
   <RequirementColumns />
 </ReferenceManyField>
-</SimpleShowLayout>
+</TabbedShowLayout.Tab>
+<TabbedShowLayout.Tab label="ID" >
+<TextField source="id" label="ID" />
+<TextField source="company_id" label="Company ID" />
+</TabbedShowLayout.Tab>
+<TabbedShowLayout.Tab label="日付情報" >
+<DateField source="created_at" label="作成日" />
+<DateField source="updated_at" label="更新日" />
+</TabbedShowLayout.Tab>
+</TabbedShowLayout>
 </Show>
 );

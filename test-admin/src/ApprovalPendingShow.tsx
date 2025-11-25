@@ -1,11 +1,12 @@
 import { Show, SimpleShowLayout, TextField, BooleanField, ArrayField, 
-  SingleFieldList, DateField, UrlField, useRecordContext, useNotify, FunctionField } from "react-admin";
-import Button from "@mui/material/Button";
+  SingleFieldList, DateField, UrlField, useRecordContext, useNotify, FunctionField, useRedirect,TopToolbar, Button } from "react-admin";
+// import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetOne } from "react-admin";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // ...existing code...
 
@@ -84,9 +85,18 @@ const PendingGuard = () => {
   return null;
 };
 
+const AppravalPendingActions = () => {
+  const redirect = useRedirect();
+  return (
+    <TopToolbar sx={{ justifyContent: "space-between" }}>
+      <Button startIcon = {<ArrowBackIcon />} label="一覧へ戻る" onClick={() => redirect("list", "pendings")} />
+    </TopToolbar>
+  );
+};
+
 export const ApprovalPendingShow = () => {
   return (
-    <Show title="公開許可待ち詳細">
+    <Show title="公開許可待ち詳細" actions={<AppravalPendingActions />}>
       {/* 戻るで来たときのガード */}
       <PendingGuard />
 
