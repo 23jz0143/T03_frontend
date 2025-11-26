@@ -84,7 +84,7 @@ const RequirementShowActions = () => {
               {advertisementId && (
                   <Button
                       component = {Link}
-                      to = {`/advertisements/${advertisementId}/show`}
+                      to = {`/advertisements/${advertisementId}/show/1`}
                       startIcon = {<ArrowBackIcon />}
                       label = "求人票に戻る"
                   />
