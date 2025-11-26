@@ -24,27 +24,39 @@ const customDataProvider: DataProvider = {
 
   getList: async (resource, params) => {
     let url = `${listBaseUrl}/accounts`;
-    // ...existing code...
+  
     if (resource === "pendings") {
       url = "/api/admin/advertisements/pendings";
     } else if (resource === "advertisements") {
       const year = (params?.filter as any)?.year ?? new Date().getFullYear();
       url = `/api/admin/advertisements?year=${year}`;
+    } else if (resource === "tags") {
+      // 🔧 Return tags from your list endpoint and normalize to { id, tag_name }
+      const resp = await fetch(`/api/list/tags`, {
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+      });
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      const raw = await resp.json();
+  
+      const data = (Array.isArray(raw) ? raw : []).map((t: any) => {
+        const id = t?.id ?? t?.value ?? (typeof t === "string" ? t : undefined);
+        const tag_name =
+          t?.tag_name ?? t?.name ?? t?.label ?? (typeof t === "string" ? t : "");
+        return { id: String(id), tag_name };
+      });
+  
+      return { data, total: data.length };
     }
+  
+    // existing fetch for other resources …
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
     });
-
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
     const total = response.headers.get("X-Total-Count");
     const data = await response.json();
-
-    // 追加: 一覧のレコードから id -> company_id をキャッシュ
+  
     if ((resource === "advertisements" || resource === "pendings") && Array.isArray(data)) {
       data.forEach((item: any) => {
         if (item?.id != null && item?.company_id != null) {
@@ -52,14 +64,13 @@ const customDataProvider: DataProvider = {
         }
       });
     }
-
+  
     return {
-      data: Array.isArray(data)
-        ? data.map((item) => ({ ...item, id: item.id }))
-        : [{ ...data, id: data.id }],
+      data: Array.isArray(data) ? data.map((item) => ({ ...item, id: item.id })) : [{ ...data, id: data.id }],
       total: total ? parseInt(total, 10) : Array.isArray(data) ? data.length : 1,
     };
   },
+  
 
 
   getOne: async (resource, params) => {
@@ -112,7 +123,31 @@ const customDataProvider: DataProvider = {
     return { data: { ...data, _full: true } };
   },
 
-
+  getMany: async (resource, params) => {
+    if (resource === "tags") {
+      const resp = await fetch(`/api/list/tags`, {
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+      });
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      const raw = await resp.json();
+  
+      const all = (Array.isArray(raw) ? raw : []).map((t: any) => {
+        const id = t?.id ?? t?.value ?? (typeof t === "string" ? t : undefined);
+        const tag_name =
+          t?.tag_name ?? t?.name ?? t?.label ?? (typeof t === "string" ? t : "");
+        return { id: String(id), tag_name };
+      });
+  
+      const want = new Set((params.ids ?? []).map(String));
+      const data = all.filter((t) => want.has(String(t.id)));
+      return { data };
+    }
+  
+    // fallback for other resources if you need it:
+    // return baseProvider.getMany(resource, params);
+    throw new Error(`getMany not implemented for ${resource}`);
+  },
+  
 
 getManyReference: async (resource, params) => {
   if (resource === "requirements") {
