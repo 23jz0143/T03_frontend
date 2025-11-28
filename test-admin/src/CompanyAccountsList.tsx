@@ -1,7 +1,7 @@
 import { useMediaQuery } from "@mui/material";
 import { List, Datagrid, TextField, SimpleList, EditButton } from "react-admin";
 
-export const UserList = () => {
+export const CompanyAccountsList = () => {
   const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm")); // ロジックはJSXの外で記述
 
   return (
@@ -12,12 +12,12 @@ export const UserList = () => {
           secondaryText={(record) => record.company_name}
         />
       ) : (
-        <Datagrid rowClick=""> 
+        <Datagrid rowClick="">
           <TextField source="id" />
           <TextField source="account_name" />
           <TextField source="company_name" />
           <TextField source="password" />
-          <EditButton label="編集"/> 
+          <EditButton label="編集" />
         </Datagrid>
       )}
     </List>
