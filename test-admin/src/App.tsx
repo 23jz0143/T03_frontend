@@ -27,7 +27,9 @@ const customDataProvider: DataProvider = {
     if (resource === "pendings") {
       url = "/api/admin/advertisements/pendings";
     } else if (resource === "advertisements") {
-      const year = (params?.filter as any)?.year ?? new Date().getFullYear();
+      console.log("getList advertisements params:", params);
+      const year = (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
+      console.log("Fetching advertisements for year:", year);
       url = `/api/admin/advertisements?year=${year}`;
     } else if (resource === "tags") {
       // 🔧 Return tags from your list endpoint and normalize to { id, tag_name }

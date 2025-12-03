@@ -4,7 +4,8 @@ import { useMemo } from "react";
 
 export const AdvertisementsList = () => {
     const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm"));
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear() + 2;
+    
 
     const yearChoices = useMemo(
         () =>
