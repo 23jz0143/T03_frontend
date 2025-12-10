@@ -13,6 +13,7 @@ import { RequirementShow } from "./RequirementShow";
 import { AdvertisementCreate } from "./AdvertisementCreate";
 import { LoginPage } from "./LoginPage";
 import { authProvider } from "./authProvider";
+import { CompanyShow } from "./CompanyShow";
 
 const listBaseUrl = "/api/admin/companies";
 
@@ -109,6 +110,9 @@ const customDataProvider: DataProvider = {
           "company_id が不明です。一覧からレコードを開いてください。"
         );
       url = `/api/companies/${companyId}/advertisements/${id}`;
+    } else if ( resource === "company") {
+      url = `/api/companies/${params.id}`;
+      logDP("getOne accounts (fetch company info)", { id: params.id, url });
     } else if (resource === "requirements") {
       const { id } = params as any;
       if (!id) throw new Error("id is required");
@@ -392,6 +396,7 @@ const App = () => (
       list={CompanyAccountsList}
       edit={UserEdit}
       create={UserCreate}
+      show={CompanyShow}
       icon={AccountCircle}
       options={{ label: "アカウント" }}
     />
