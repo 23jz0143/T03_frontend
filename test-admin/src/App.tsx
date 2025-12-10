@@ -11,6 +11,8 @@ import { ApprovalPendingShow } from "./ApprovalPendingShow";
 import { AdvertisementsShow } from "./AdvertisementsShow";
 import { RequirementShow } from "./RequirementShow";
 import { AdvertisementCreate } from "./AdvertisementCreate";
+import { LoginPage } from "./LoginPage";
+import { authProvider } from "./authProvider";
 
 const listBaseUrl = "/api/admin/companies";
 
@@ -28,7 +30,8 @@ const customDataProvider: DataProvider = {
       url = "/api/admin/advertisements/pendings";
     } else if (resource === "advertisements") {
       console.log("getList advertisements params:", params);
-      const year = (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
+      const year =
+        (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
       console.log("Fetching advertisements for year:", year);
       url = `/api/admin/advertisements?year=${year}`;
     } else if (resource === "tags") {
@@ -379,7 +382,11 @@ const customDataProvider: DataProvider = {
 };
 
 const App = () => (
-  <Admin dataProvider={customDataProvider}>
+  <Admin
+    dataProvider={customDataProvider}
+    loginPage={LoginPage}
+    authProvider={authProvider}
+  >
     <Resource
       name="accounts"
       list={CompanyAccountsList}
