@@ -14,6 +14,7 @@ import { AdvertisementCreate } from "./AdvertisementCreate";
 import { LoginPage } from "./LoginPage";
 import { authProvider } from "./authProvider";
 import { CompanyShow } from "./CompanyShow";
+import { CompanyEdit } from "./CompanyEdit";
 
 const listBaseUrl = "/api/admin/companies";
 
@@ -27,73 +28,69 @@ const customDataProvider: DataProvider = {
   getList: async (resource, params) => {
     let url = `${listBaseUrl}/accounts`;
 
-    if (resource === "pendings") {
-      url = "/api/admin/advertisements/pendings";
-    } else if (resource === "advertisements") {
-      console.log("getList advertisements params:", params);
-      const year =
-        (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
-      console.log("Fetching advertisements for year:", year);
-      url = `/api/admin/advertisements?year=${year}`;
-    } else if (resource === "tags") {
-      // 🔧 Return tags from your list endpoint and normalize to { id, tag_name }
-      const resp = await fetch(`/api/list/tags`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+    // --- industries (業種一覧) の取得処理を追加 ---
+    if (resource === "industries") {
+      // 企業側と同じAPIエンドポイントを使用
+      const resp = await fetch(`/api/list/industries`, {
+        headers: { "Content-Type": "application/json" },
       });
       if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
       const raw = await resp.json();
-
+      const data = (Array.isArray(raw) ? raw : []).map((item: any) => ({
+        ...item,
+        id: String(item.id),
+      }));
+      return { data, total: data.length };
+    }
+    
+    // --- tags の取得処理 (既存) ---
+    if (resource === "tags") {
+      const resp = await fetch(`/api/list/tags`, {
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+      });
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      const raw = await resp.json();
       const data = (Array.isArray(raw) ? raw : []).map((t: any) => {
         const id = t?.id ?? t?.value ?? (typeof t === "string" ? t : undefined);
-        const tag_name =
-          t?.tag_name ??
-          t?.name ??
-          t?.label ??
-          (typeof t === "string" ? t : "");
+        const tag_name = t?.tag_name ?? t?.name ?? t?.label ?? (typeof t === "string" ? t : "");
         return { id: String(id), tag_name };
       });
-
       return { data, total: data.length };
     }
 
-    // existing fetch for other resources …
+    // --- advertisements の取得処理 (既存) ---
+    if (resource === "advertisements") {
+      console.log("getList advertisements params:", params);
+      const year = (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
+      url = `/api/admin/advertisements?year=${year}`;
+    } 
+    
+    // --- pendings の取得処理 (既存) ---
+    else if (resource === "pendings") {
+      url = "/api/admin/advertisements/pendings";
+    }
+
+    // デフォルトの処理 (jsonServerProvider互換)
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const total = response.headers.get("X-Total-Count");
     const data = await response.json();
 
-    if (
-      (resource === "advertisements" || resource === "pendings") &&
-      Array.isArray(data)
-    ) {
+    // IDのマッピング保存処理 (既存)
+    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(data)) {
       data.forEach((item: any) => {
         if (item?.id != null && item?.company_id != null) {
-          sessionStorage.setItem(
-            `advCompany:${item.id}`,
-            String(item.company_id)
-          );
+          sessionStorage.setItem(`advCompany:${item.id}`, String(item.company_id));
         }
       });
     }
 
     return {
-      data: Array.isArray(data)
-        ? data.map((item) => ({ ...item, id: item.id }))
-        : [{ ...data, id: data.id }],
-      total: total
-        ? parseInt(total, 10)
-        : Array.isArray(data)
-        ? data.length
-        : 1,
+      data: Array.isArray(data) ? data.map((item) => ({ ...item, id: item.id })) : [{ ...data, id: data.id }],
+      total: total ? parseInt(total, 10) : Array.isArray(data) ? data.length : 1,
     };
   },
 
@@ -113,6 +110,36 @@ const customDataProvider: DataProvider = {
     } else if ( resource === "company") {
       url = `/api/companies/${params.id}`;
       logDP("getOne accounts (fetch company info)", { id: params.id, url });
+
+      // 1. 会社情報を取得
+      const companyResp = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!companyResp.ok) throw new Error(`HTTP error! status: ${companyResp.status}`);
+      const companyData = await companyResp.json();
+
+      // 2. 業種マスタ(全件)を取得して、名前からIDを探す
+      // ※ APIエンドポイントは getList で使用しているものと同じと仮定
+      const industriesResp = await fetch(`/api/list/industries`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (industriesResp.ok) {
+        const industriesList = await industriesResp.json();
+        
+        // industry_names (例: ["IT", "通信"]) を持っている場合
+        if (companyData.industry_names && Array.isArray(companyData.industry_names)) {
+           // マスタデータの中から、名前が一致するものを探して ID の配列を作る
+          const matchedIds = industriesList
+          .filter((ind: any) => companyData.industry_names.includes(ind.industry_name))
+          .map((ind: any) => String(ind.id)); // IDは文字列にしておくと安全
+
+           // React Admin用に industry_ids というキーで持たせる
+          companyData.industry_ids = matchedIds;
+        }
+      }
+
+      return { data: { ...companyData, _full: true } };
     } else if (resource === "requirements") {
       const { id } = params as any;
       if (!id) throw new Error("id is required");
@@ -159,34 +186,77 @@ const customDataProvider: DataProvider = {
   },
 
   getMany: async (resource, params) => {
+    const { ids } = params;
+    if (resource === "industries") {
+      // クエリパラメータを構築
+      const query = ids.map(id => `industry_ids=${id}`).join('&');
+      const url = `/api/list/industries/selection?${query}`;
+      
+      logDP(`getMany industries fetching from: ${url}`);
+
+      const resp = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+      
+      const raw = await resp.json();
+      
+      const data = (Array.isArray(raw) ? raw : []).map((item: any) => ({
+        ...item,
+        id: String(item.id),
+      }));
+
+      return { data };
+    }
+
+    
+    // tags (既存)
     if (resource === "tags") {
       const resp = await fetch(`/api/list/tags`, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
       });
       if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
       const raw = await resp.json();
 
       const all = (Array.isArray(raw) ? raw : []).map((t: any) => {
         const id = t?.id ?? t?.value ?? (typeof t === "string" ? t : undefined);
-        const tag_name =
-          t?.tag_name ??
-          t?.name ??
-          t?.label ??
-          (typeof t === "string" ? t : "");
+        const tag_name = t?.tag_name ?? t?.name ?? t?.label ?? (typeof t === "string" ? t : "");
         return { id: String(id), tag_name };
       });
 
-      const want = new Set((params.ids ?? []).map(String));
+      const want = new Set((ids ?? []).map(String));
       const data = all.filter((t) => want.has(String(t.id)));
       return { data };
     }
 
-    // fallback for other resources if you need it:
-    // return baseProvider.getMany(resource, params);
-    throw new Error(`getMany not implemented for ${resource}`);
+    // industries および 他のマスタデータ (selection API対応)
+    const selectionParamMap: { [key: string]: string } = {
+        industries: 'industry_ids',
+        job_categories: 'job_category_ids',
+        prefectures: 'prefecture_ids',
+        welfare_benefits: 'welfare_benefit_ids',
+        submission_objects: 'submission_object_ids'
+    };
+
+    if (selectionParamMap[resource]) {
+        const paramName = selectionParamMap[resource];
+        // クエリパラメータの生成 (例: ?industry_ids=1&industry_ids=2...)
+        const queryString = ids.map(id => `${paramName}=${id}`).join('&');
+        const url = `/api/list/${resource}/selection?${queryString}`;
+        
+        logDP(`getMany fetching for ${resource} from: ${url}`);
+
+        const resp = await fetch(url, {
+            headers: { "Content-Type": "application/json" },
+        });
+        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+        
+        const data = await resp.json();
+        return { data };
+    }
+
+    // fallback
+    return baseProvider.getMany(resource, params);
   },
 
   getManyReference: async (resource, params) => {
@@ -307,20 +377,40 @@ const customDataProvider: DataProvider = {
     }
   },
 
-  update: async (_, { id, data }) => {
-    const response = await fetch(`${listBaseUrl}/${id}/accounts`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    const responseData = await response.json();
-    return { data: responseData };
+  update: async (resource, { id, data }) => {
+    let url: string;
+    let dataToSubmit;
+    if(resource === "accounts") {
+      dataToSubmit = {
+        ...data,
+      }
+      url = `${listBaseUrl}/${id}/accounts`;
+    } else if(resource === "company") {
+      if (!id) throw new Error("id is required");
+      url = `/api/companies/${id}`;
+      dataToSubmit = {
+        ...data,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    try {
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(dataToSubmit),
+      });
+  
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  
+      const responseData = await response.json();
+      return { data: responseData };
+    } catch (error) {
+      console.error("UPDATE Request error:", error);
+      throw error;
+    }
   },
 
   delete: async (_, { id }) => {
@@ -401,6 +491,12 @@ const App = () => (
       options={{ label: "アカウント" }}
     />
     <Resource
+      name="company"
+      edit={CompanyEdit}
+      show={CompanyShow}
+      options={{ label: "会社情報" }}
+    />
+    <Resource
       name="pendings"
       list={Approval_pendingList}
       show={ApprovalPendingShow}
@@ -414,6 +510,7 @@ const App = () => (
       options={{ label: "求人票一覧" }}
     />
     <Resource name="requirements" show={RequirementShow} />
+    <Resource name="industries" />
   </Admin>
 );
 
