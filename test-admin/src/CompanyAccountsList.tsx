@@ -18,7 +18,7 @@ export const CompanyAccountsList = () => {
           <TextField source="account_name" />
           <TextField source="company_name" />
           {/* <TextField source="password" /> */}
-          <ShowButton label="詳細" />
+          {/* <ShowButton label="詳細" /> */}
           <EditButton label="編集" />
         </Datagrid>
       )}

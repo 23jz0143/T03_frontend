@@ -8,15 +8,23 @@ import {
     FunctionField,
     ArrayField,
     SingleFieldList,
-    useGetIdentity,
     TopToolbar,
-    EditButton
+    EditButton,
+    Button,
+
 } from "react-admin";
 
-import { Chip } from "@mui/material";
+import { Link } from "react-router-dom";
+import { Box, Chip } from "@mui/material";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const ProductShowActions = () => (
-    <TopToolbar>
+    <TopToolbar sx={{ justifyContent: "space-between" }}>
+        <Box>
+            <Button label="一覧に戻る" component={Link} to="/accounts" >
+                <ArrowBackIcon />
+            </Button>
+        </Box>
         <EditButton label="編集"/>
     </TopToolbar>
 );
@@ -25,6 +33,7 @@ export const CompanyShow = () => {
     return (
         <Show resource="company" actions={<ProductShowActions />} title="会社情報">
             <SimpleShowLayout>
+                <NumberField source="id" label="ID"/>
                 <TextField source="company_name" label="会社名"/>
                 <TextField source="company_name_furigana" label="会社名(ふりがな)"/>
                 <TextField source="address" label="住所"/>
