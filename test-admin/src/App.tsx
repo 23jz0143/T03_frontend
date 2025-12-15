@@ -22,6 +22,12 @@ const baseProvider = jsonServerProvider(listBaseUrl);
 
 const logDP = (...args: any[]) => console.debug("[DP]", ...args);
 
+const toNumber = (val: any): number => {
+  if(val === null || val === undefined || val === "") return 0;
+  const number = Number(val);
+  return isNaN(number) ? 0 : number;
+};
+
 const customDataProvider: DataProvider = {
   ...baseProvider,
 
@@ -118,8 +124,6 @@ const customDataProvider: DataProvider = {
       if (!companyResp.ok) throw new Error(`HTTP error! status: ${companyResp.status}`);
       const companyData = await companyResp.json();
 
-      // 2. 業種マスタ(全件)を取得して、名前からIDを探す
-      // ※ APIエンドポイントは getList で使用しているものと同じと仮定
       const industriesResp = await fetch(`/api/list/industries`, {
         headers: { "Content-Type": "application/json" },
       });
@@ -127,15 +131,13 @@ const customDataProvider: DataProvider = {
       if (industriesResp.ok) {
         const industriesList = await industriesResp.json();
         
-        // industry_names (例: ["IT", "通信"]) を持っている場合
         if (companyData.industry_names && Array.isArray(companyData.industry_names)) {
-           // マスタデータの中から、名前が一致するものを探して ID の配列を作る
           const matchedIds = industriesList
           .filter((ind: any) => companyData.industry_names.includes(ind.industry_name))
           .map((ind: any) => String(ind.id)); // IDは文字列にしておくと安全
 
-           // React Admin用に industry_ids というキーで持たせる
-          companyData.industry_ids = matchedIds;
+           // React Admin用に industry_id というキーで持たせる
+          companyData.industry_id = matchedIds;
         }
       }
 
@@ -187,76 +189,62 @@ const customDataProvider: DataProvider = {
 
   getMany: async (resource, params) => {
     const { ids } = params;
-    if (resource === "industries") {
-      // クエリパラメータを構築
-      const query = ids.map(id => `industry_ids=${id}`).join('&');
-      const url = `/api/list/industries/selection?${query}`;
-      
-      logDP(`getMany industries fetching from: ${url}`);
+      logDP(`getMany called for ${resource}`, params);
 
-      const resp = await fetch(url, {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-      
-      const raw = await resp.json();
-      
-      const data = (Array.isArray(raw) ? raw : []).map((item: any) => ({
-        ...item,
-        id: String(item.id),
-      }));
-
-      return { data };
-    }
-
-    
-    // tags (既存)
-    if (resource === "tags") {
-      const resp = await fetch(`/api/list/tags`, {
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-      });
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-      const raw = await resp.json();
-
-      const all = (Array.isArray(raw) ? raw : []).map((t: any) => {
-        const id = t?.id ?? t?.value ?? (typeof t === "string" ? t : undefined);
-        const tag_name = t?.tag_name ?? t?.name ?? t?.label ?? (typeof t === "string" ? t : "");
-        return { id: String(id), tag_name };
-      });
-
-      const want = new Set((ids ?? []).map(String));
-      const data = all.filter((t) => want.has(String(t.id)));
-      return { data };
-    }
-
-    // industries および 他のマスタデータ (selection API対応)
-    const selectionParamMap: { [key: string]: string } = {
-        industries: 'industry_ids',
+      const selectionParamMap: { [key: string]: string } = {
+        // industries: 'industry_ids',
+        tags: 'tag_ids',
         job_categories: 'job_category_ids',
         prefectures: 'prefecture_ids',
         welfare_benefits: 'welfare_benefit_ids',
-        submission_objects: 'submission_object_ids'
-    };
+        submission_objects: 'submission_objects_ids',
+      };
 
-    if (selectionParamMap[resource]) {
-        const paramName = selectionParamMap[resource];
-        // クエリパラメータの生成 (例: ?industry_ids=1&industry_ids=2...)
+      const paramName = selectionParamMap[resource];
+      let url = `/api/list/${resource}`;
+
+      if(paramName) {
         const queryString = ids.map(id => `${paramName}=${id}`).join('&');
-        const url = `/api/list/${resource}/selection?${queryString}`;
-        
-        logDP(`getMany fetching for ${resource} from: ${url}`);
 
-        const resp = await fetch(url, {
-            headers: { "Content-Type": "application/json" },
+        url = `/api/list/${resource}/selection?${queryString}`;
+        console.log(`getMany fetching ${resource} with URL:`, url);
+        
+        const response = await fetch(url, {
+          headers: {'Content-Type': 'application/json' },
         });
-        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+        if (!response.ok) {
+          throw new Error(`getMany error for ${resource}, status: ${response.status}`);
+        }
+        const text = await response.text();
+        let json;
+        try {
+          json = text ? JSON.parse(text) : [];
+        } catch (e) {
+          console.error(`JSON Parse failed for getMany ${resource}:`, e);
+          json = [];
+        }
         
-        const data = await resp.json();
-        return { data };
-    }
+        return { data: json };
+      }
 
-    // fallback
-    return baseProvider.getMany(resource, params);
+      const response = await fetch(url, {
+        headers: {'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const json = await response.json();
+
+      const stringIds = ids.map(String);
+      const data = Array.isArray(json)
+        ? json.filter((item: any) => stringIds.includes(String(item.id))) : [];
+
+      logDP(`getMany result for ${resource}`, data);
+
+      const normalizedData = data.map((item: any) => ({ ...item, id: String(item.id) }));
+      
+      return { data: normalizedData };
   },
 
   getManyReference: async (resource, params) => {
@@ -378,7 +366,7 @@ const customDataProvider: DataProvider = {
   },
 
   update: async (resource, { id, data }) => {
-    let url: string;
+    let url;
     let dataToSubmit;
     if(resource === "accounts") {
       dataToSubmit = {
@@ -388,8 +376,12 @@ const customDataProvider: DataProvider = {
     } else if(resource === "company") {
       if (!id) throw new Error("id is required");
       url = `/api/companies/${id}`;
+      console.log(data);
+
+      const industryIds = Array.isArray(data.industry_id) ? data.industry_id.map(toNumber) : (data.industry_id ? [toNumber(data.industry_id)] : []);
       dataToSubmit = {
         ...data,
+        industry_id: industryIds,
         updated_at: new Date().toISOString(),
       };
     }
@@ -404,9 +396,17 @@ const customDataProvider: DataProvider = {
       });
   
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const responseText = await response.text();
+
+      if(!responseText) {
+        logDP("Update response body for ${resource} is empty");
+        return { data: { ...data, id: id, _full: true } };
+      }
   
-      const responseData = await response.json();
-      return { data: responseData };
+      const responseData = JSON.parse(responseText);
+
+      return { data: { ...responseData, ...data, id: responseData.id ?? id, _full: true } };
     } catch (error) {
       console.error("UPDATE Request error:", error);
       throw error;
@@ -510,7 +510,12 @@ const App = () => (
       options={{ label: "求人票一覧" }}
     />
     <Resource name="requirements" show={RequirementShow} />
+    <Resource name="tags" />
     <Resource name="industries" />
+    <Resource name="job_categories" />  
+    <Resource name="prefectures" />
+    <Resource name="welfare_benefits" />
+    <Resource name="submission_objects" />
   </Admin>
 );
 
