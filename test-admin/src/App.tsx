@@ -101,52 +101,45 @@ const customDataProvider: DataProvider = {
   },
 
   getOne: async (resource, params) => {
-    let url: string;
+    logDP("getOne called with resource:", resource, "params:", params);
 
-    if (resource === "pendings" || resource === "advertisements") {
+    let url = "";
+    let currentAdvId: string | null = null;
+
+    // --- URL組み立て ---
+    if (resource === "accounts") {
       const { id } = params as any;
+      if (!id) throw new Error("ID is required");
+      url = `${listBaseUrl}/${id}/accounts`;
+    } else if (resource === "pendings") {
+      const { id } = params as any; // id = advertisement_id
       if (!id) throw new Error("id is required");
+
       const companyId = sessionStorage.getItem(`advCompany:${id}`);
-      logDP("getOne", resource, { id, companyId });
-      if (!companyId)
+      if (!companyId) {
+        throw new Error("company_id が不明です。公開許可待ち一覧からレコードを開いてください。");
+      }
+
+      url = `/api/companies/${companyId}/advertisements/${id}`;
+    } else if (resource === "advertisements") {
+      const { id } = params as any;
+      if (!id) throw new Error("ID is required for getOne operation");
+
+      // 一覧取得時に保存している companyId を利用
+      const companyId = sessionStorage.getItem(`advCompany:${id}`);
+      if (!companyId) {
         throw new Error(
           "company_id が不明です。一覧からレコードを開いてください。"
         );
-      url = `/api/companies/${companyId}/advertisements/${id}`;
-    } else if ( resource === "company") {
-      url = `/api/companies/${params.id}`;
-      logDP("getOne accounts (fetch company info)", { id: params.id, url });
-
-      // 1. 会社情報を取得
-      const companyResp = await fetch(url, {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!companyResp.ok) throw new Error(`HTTP error! status: ${companyResp.status}`);
-      const companyData = await companyResp.json();
-
-      const industriesResp = await fetch(`/api/list/industries`, {
-        headers: { "Content-Type": "application/json" },
-      });
-      
-      if (industriesResp.ok) {
-        const industriesList = await industriesResp.json();
-        
-        if (companyData.industry_names && Array.isArray(companyData.industry_names)) {
-          const matchedIds = industriesList
-          .filter((ind: any) => companyData.industry_names.includes(ind.industry_name))
-          .map((ind: any) => String(ind.id)); // IDは文字列にしておくと安全
-
-           // React Admin用に industry_id というキーで持たせる
-          companyData.industry_id = matchedIds;
-        }
       }
-
-      return { data: { ...companyData, _full: true } };
+      url = `/api/companies/${companyId}/advertisements/${id}`;
     } else if (resource === "requirements") {
       const { id } = params as any;
       if (!id) throw new Error("id is required");
 
       const advId = sessionStorage.getItem(`reqAdv:${id}`);
+      currentAdvId = advId;
+
       const companyId =
         sessionStorage.getItem(`reqCompany:${id}`) ||
         (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
@@ -160,29 +153,194 @@ const customDataProvider: DataProvider = {
       }
 
       url = `/api/companies/${companyId}/advertisements/${advId}/requirements/${id}`;
+    } else if (resource === "company") {
+      const { id } = params as any;
+      if (!id) throw new Error("id is required");
+      url = `/api/companies/${id}`;
     } else {
-      url = `${listBaseUrl}/${(params as any).id}/accounts`;
-      logDP("getOne (fallback)", resource, params, url);
+      // それ以外は従来通り（必要なら調整）
+      url = `/api/${resource}/${(params as any).id}`;
     }
 
     sessionStorage.setItem("lastFetchedUrl", url);
     logDP("GET", url);
 
-    const startedAt = performance.now();
     const response = await fetch(url, {
-      method: "GET",
-      headers: {
+      headers: new Headers({
         "Content-Type": "application/json",
         Accept: "application/json",
-      },
+      }),
     });
-    const dur = Math.round(performance.now() - startedAt);
-    logDP("resp", response.status, response.statusText, `${dur}ms`);
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (response.status < 200 || response.status >= 300) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(errorText || response.statusText);
+    }
 
-    const data = await response.json();
-    logDP("data keys", Object.keys(data));
+    const data: any = await response.json();
+
+    // --- advertisements: tags -> tag_ids（編集画面用） ---
+    if (resource === "advertisements") {
+      if (Array.isArray(data.tags) && data.tags.length > 0) {
+        try {
+          const tagsRes = await fetch("/api/list/tags");
+          if (tagsRes.ok) {
+            const tagsList = await tagsRes.json();
+
+            const ids = data.tags
+              .map((tagName: string) => {
+                const found = tagsList.find(
+                  (tag: any) => tag.tag_name === tagName
+                );
+                return found ? found.id : null;
+              })
+              .filter((id: any) => id !== null);
+
+            data.tag_ids = ids;
+            logDP("Mapped tags to tag_ids:", ids);
+          }
+        } catch (e) {
+          console.error("Failed to fetch tags for mapping:", e);
+        }
+      }
+    }
+
+    // --- requirements: 参照リスト名 -> *_id へ変換（編集画面用） ---
+    if (resource === "requirements" && currentAdvId) {
+      data.advertisement_id = currentAdvId;
+
+      try {
+        const [jobCatsRes, subObjsRes, prefsRes, welfaresRes] =
+          await Promise.all([
+            fetch("/api/list/job_categories"),
+            fetch("/api/list/submission_objects"),
+            fetch("/api/list/prefectures"),
+            fetch("/api/list/welfare_benefits"),
+          ]);
+
+        const jobCats = jobCatsRes.ok ? await jobCatsRes.json() : [];
+        const subObjs = subObjsRes.ok ? await subObjsRes.json() : [];
+        const prefs = prefsRes.ok ? await prefsRes.json() : [];
+        const welfares = welfaresRes.ok ? await welfaresRes.json() : [];
+
+        const findIdByName = (
+          list: any[],
+          nameVal: any,
+          possibleKeys: string[]
+        ) => {
+          if (!nameVal || !Array.isArray(list)) return null;
+          const searchStr = String(nameVal).trim();
+
+          let found = list.find((item) =>
+            possibleKeys.some(
+              (key) => item[key] && String(item[key]) === searchStr
+            )
+          );
+
+          if (!found) {
+            found = list.find((item) =>
+              Object.values(item).some((val) => String(val) === searchStr)
+            );
+          }
+
+          return found ? found.id : null;
+        };
+
+        // job_category (職種)
+        if (!data.job_category_id) {
+          const searchName =
+            data.job_categories_name || data.job_category_name || data.job_category;
+          if (searchName) {
+            const mappedId = findIdByName(jobCats, searchName, [
+              "name",
+              "job_category_name",
+              "job_categories_name",
+            ]);
+            if (mappedId) data.job_category_id = mappedId;
+          }
+        }
+
+        // submission_objects (提出物)
+        if (!data.submission_objects_id || data.submission_objects_id.length === 0) {
+          const subNames = data.submission_objects || data.submission_object_names;
+          data.submission_objects_id = Array.isArray(subNames)
+            ? subNames
+                .map((name: any) =>
+                  findIdByName(subObjs, name, ["name", "submission_object_name"])
+                )
+                .filter((id: any) => id !== null)
+            : [];
+        }
+
+        // prefecture (都道府県)
+        if (!data.prefecture_id || data.prefecture_id.length === 0) {
+          const prefNames = data.prefectures || data.prefecture_names;
+          data.prefecture_id = Array.isArray(prefNames)
+            ? prefNames
+                .map((name: any) =>
+                  findIdByName(prefs, name, ["name", "prefecture_name"])
+                )
+                .filter((id: any) => id !== null)
+            : [];
+        }
+
+        // welfare_benefits (福利厚生)
+        if (
+          !data.welfare_benefits_id ||
+          data.welfare_benefits_id.length === 0
+        ) {
+          const welNames = data.welfare_benefits || data.welfare_benefit_names;
+          data.welfare_benefits_id = Array.isArray(welNames)
+            ? welNames
+                .map((name: any) =>
+                  findIdByName(welfares, name, ["name", "welfare_benefit_name"])
+                )
+                .filter((id: any) => id !== null)
+            : [];
+        }
+
+        logDP("Mapped requirement IDs:", {
+          job: data.job_category_id,
+          sub: data.submission_objects_id,
+          pref: data.prefecture_id,
+          wel: data.welfare_benefits_id,
+        });
+      } catch (e) {
+        console.error("Failed to fetch lists for requirements mapping:", e);
+      }
+    }
+
+    // --- company: industry_names -> industry_id（編集画面用） ---
+    if (resource === "company") {
+      const companyId = (params as any).id;
+      if (!data.id) data.id = companyId; // react-admin用のid保証
+
+      if (Array.isArray(data.industry_names) && data.industry_names.length > 0) {
+        try {
+          const industriesRes = await fetch("/api/list/industries");
+          if (industriesRes.ok) {
+            const industriesList = await industriesRes.json();
+
+            const ids = data.industry_names
+              .map((name: string) => {
+                const found = industriesList.find(
+                  (ind: any) => ind.industry_name === name
+                );
+                return found ? found.id : null;
+              })
+              .filter((id: any) => id !== null);
+
+            data.industry_ids = ids;
+            logDP("Mapped industry_names to industry_id:", ids);
+          }
+        } catch (e) {
+          console.error("Failed to fetch industries for mapping:", e);
+        }
+      }
+
+      if (!data.industry_ids) data.industry_ids = [];
+      data.industry_ids = data.industry_ids.map((x: any) => String(x));
+    }
 
     return { data: { ...data, _full: true } };
   },
@@ -192,7 +350,7 @@ const customDataProvider: DataProvider = {
       logDP(`getMany called for ${resource}`, params);
 
       const selectionParamMap: { [key: string]: string } = {
-        // industries: 'industry_ids',
+        industries: 'industry_ids',
         tags: 'tag_ids',
         job_categories: 'job_category_ids',
         prefectures: 'prefecture_ids',
@@ -204,7 +362,7 @@ const customDataProvider: DataProvider = {
       let url = `/api/list/${resource}`;
 
       if(paramName) {
-        const queryString = ids.map(id => `${paramName}=${id}`).join('&');
+        const queryString = (ids ?? []).map((id: any) => `${paramName}=${encodeURIComponent(String(id))}`).join("&");
 
         url = `/api/list/${resource}/selection?${queryString}`;
         console.log(`getMany fetching ${resource} with URL:`, url);
@@ -216,15 +374,13 @@ const customDataProvider: DataProvider = {
           throw new Error(`getMany error for ${resource}, status: ${response.status}`);
         }
         const text = await response.text();
-        let json;
-        try {
-          json = text ? JSON.parse(text) : [];
-        } catch (e) {
-          console.error(`JSON Parse failed for getMany ${resource}:`, e);
-          json = [];
-        }
-        
-        return { data: json };
+        const json = text ? JSON.parse(text) : [];
+
+        const data = Array.isArray(json)
+          ? json.map((item: any) => ({ ...item, id: String(item.id) }))
+          : [];
+
+        return { data };
       }
 
       const response = await fetch(url, {
@@ -241,10 +397,8 @@ const customDataProvider: DataProvider = {
         ? json.filter((item: any) => stringIds.includes(String(item.id))) : [];
 
       logDP(`getMany result for ${resource}`, data);
-
-      const normalizedData = data.map((item: any) => ({ ...item, id: String(item.id) }));
       
-      return { data: normalizedData };
+      return { data };
   },
 
   getManyReference: async (resource, params) => {
@@ -378,12 +532,18 @@ const customDataProvider: DataProvider = {
       url = `/api/companies/${id}`;
       console.log(data);
 
-      const industryIds = Array.isArray(data.industry_id) ? data.industry_id.map(toNumber) : (data.industry_id ? [toNumber(data.industry_id)] : []);
+      const industryIdsNum: number[] = Array.isArray((data as any).industry_ids)
+        ? (data as any).industry_ids.map(toNumber)
+        : (data as any).industry_ids
+        ? [toNumber((data as any).industry_ids)]
+        : [];
       dataToSubmit = {
         ...data,
-        industry_id: industryIds,
+        industry_id: industryIdsNum,
         updated_at: new Date().toISOString(),
       };
+      delete dataToSubmit.industry_ids;
+
     }
     try {
       const response = await fetch(url, {

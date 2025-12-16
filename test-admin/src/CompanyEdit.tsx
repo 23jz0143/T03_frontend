@@ -11,7 +11,7 @@ import {
 const validateRequired = required('必須項目です');
 
 export const CompanyEdit = () => (
-    <Edit title="会社情報編集" successAction="show">
+    <Edit title="会社情報編集" redirect="show">
         <SimpleForm>
             <TextInput
                 source="company_name"
@@ -61,7 +61,7 @@ export const CompanyEdit = () => (
                 placeholder="例：2005"
                 helperText="半角数字で入力してください"
                 validate={validateRequired}/>
-            <ReferenceArrayInput source="industry_id" reference="industries" label="業種">
+            <ReferenceArrayInput source="industry_ids" reference="industries" label="業種">
                 <CheckboxGroupInput optionText="industry_name" label="業種" helperText="複数選択可"/>
             </ReferenceArrayInput>
             <TextInput
