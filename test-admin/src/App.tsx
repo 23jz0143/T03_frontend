@@ -32,7 +32,13 @@ const customDataProvider: DataProvider = {
   ...baseProvider,
 
   getList: async (resource, params) => {
-    let url = `${listBaseUrl}/accounts`;
+    let url;
+    const per_page = params.pagination?.perPage ?? 10;
+    const page = params.pagination?.page ?? 1;
+
+    if (resource === "accounts") {
+      url = `${listBaseUrl}/accounts?per_page=${per_page}&page=${page}`;
+    }
 
     // --- industries (業種一覧) の取得処理を追加 ---
     if (resource === "industries") {
@@ -68,12 +74,12 @@ const customDataProvider: DataProvider = {
     if (resource === "advertisements") {
       console.log("getList advertisements params:", params);
       const year = (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
-      url = `/api/admin/advertisements?year=${year}`;
+      url = `/api/admin/advertisements?year=${year}&per_page=${per_page}&page=${page}`;
     } 
     
     // --- pendings の取得処理 (既存) ---
     else if (resource === "pendings") {
-      url = "/api/admin/advertisements/pendings";
+      url = `/api/admin/advertisements/pendings?per_page=${per_page}&page=${page}`;
     }
 
     // デフォルトの処理 (jsonServerProvider互換)
@@ -81,13 +87,15 @@ const customDataProvider: DataProvider = {
       method: "GET",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const total = response.headers.get("X-Total-Count");
-    const data = await response.json();
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);    
+    const json = await response.json();
+    const totalJson = json.total;
+    const dataJson = json.data;
+    console.log(`getList ${resource} response:`, { totalJson, dataJson });
 
     // IDのマッピング保存処理 (既存)
-    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(data)) {
-      data.forEach((item: any) => {
+    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(dataJson)) {
+      dataJson.forEach((item: any) => {
         if (item?.id != null && item?.company_id != null) {
           sessionStorage.setItem(`advCompany:${item.id}`, String(item.company_id));
         }
@@ -95,8 +103,8 @@ const customDataProvider: DataProvider = {
     }
 
     return {
-      data: Array.isArray(data) ? data.map((item) => ({ ...item, id: item.id })) : [{ ...data, id: data.id }],
-      total: total ? parseInt(total, 10) : Array.isArray(data) ? data.length : 1,
+      data: Array.isArray(dataJson) ? dataJson.map((item) => ({ ...item, id: item.id })) : [{ ...dataJson, id: dataJson.id }],
+      total: totalJson,
     };
   },
 

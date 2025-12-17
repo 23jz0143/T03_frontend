@@ -119,83 +119,107 @@ export const RequirementShow = () => {
   }, [refresh]);
 
   return (
-    <Show title="募集要項詳細" queryOptions={{ staleTime: 0, gcTime: 0 }} actions={<RequirementShowActions />}>
-      <FullRecordGate>
+    <Show actions={<RequirementShowActions />} title="募集要項詳細">
+        <FullRecordGate>
         <TabbedShowLayout>
-          <TabbedShowLayout.Tab label="概要">
-            <TextField source="id" label="ID" emptyText="未登録" />
+        <TabbedShowLayout.Tab label="概要">
             <TextField source="employment_status" label="雇用形態" emptyText="未登録" />
             <TextField source="job_categories_name" label="職種" emptyText="未登録" />
             <FunctionField
-              label="勤務地（都道府県）"
-              render={(r: any) =>
-                Array.isArray(r?.prefectures) && r.prefectures.length ? r.prefectures.join("、") : "未登録"
-              }
+                label="勤務地（都道府県）"
+                render={(r: any) =>
+                    Array.isArray(r?.prefectures) && r.prefectures.length ? r.prefectures.join("、") : "未登録"
+                }
             />
-            <NumberField source="recruiting_count" label="募集人数" emptyText="未登録" />
+            <FunctionField source="recruiting_count" label="募集人数" emptyText="未登録"  render={record => record.recruiting_count + " 人"}/>
             <FunctionField
-              label="年間休日"
-              render={(r: any) => (typeof r?.holiday_leave === "number" ? `${r.holiday_leave}日` : "未登録")}
-            />
-            <FunctionField
-              label="賞与"
-              render={(r: any) => {
-                const v = r?.bonus;
-                if (typeof v !== "number") return "未登録";
-                if (v === 0) return "なし";
-                if (v === 1) return "年1回";
-                return `年${v}回`;
-              }}
+                label="年間休日"
+                render={(r: any) => (typeof r?.holiday_leave === "number" ? `${r.holiday_leave} 日` : "未登録")}
             />
             <FunctionField
-              label="昇給"
-              render={(r: any) => (r?.salary_increase === 1 ? "あり" : r?.salary_increase === 0 ? "なし" : "未登録")}
+                label="賞与"
+                render={(r: any) => {
+                    const v = r?.bonus;
+                    if (typeof v !== "number") return "未登録";
+                    if (v === 0) return "なし";
+                    if (v === 1) return "年1回";
+                    return `年${v}回`;
+                }}
             />
-          </TabbedShowLayout.Tab>
+            <FunctionField
+                label="昇給"
+                render={(r: any) => (r?.salary_increase === 1 ? "あり" : r?.salary_increase === 0 ? "なし" : "未登録")}
+            />
+        </TabbedShowLayout.Tab>
 
-          <TabbedShowLayout.Tab label="勤務条件">
+        <TabbedShowLayout.Tab label="勤務条件">
             <TextField source="working_hours" label="就業時間" emptyText="未登録" />
             <TextField source="flex" label="フレックス" emptyText="未登録" />
             <TextField source="required_days" label="勤務日数" emptyText="未登録" />
             <TextField source="trial_period" label="試用期間" emptyText="未登録" />
             <TextField source="contract_housing" label="借上社宅" emptyText="未登録" />
             <TextField source="employee_dormitory" label="社員寮" emptyText="未登録" />
-          </TabbedShowLayout.Tab>
+        </TabbedShowLayout.Tab>
 
-          <TabbedShowLayout.Tab label="給与・福利厚生">
+        <TabbedShowLayout.Tab label="給与・福利厚生">
             <SalaryDatagridSection />
             <ArrayField source="various_allowances" label="各種手当">
-              <Datagrid bulkActionButtons={false}>
-                <TextField source="name" label="対象" />
-                <NumberField source="allowance" label="金額" options={{ style: "currency", currency: "JPY" }} />
-              </Datagrid>
+                <Datagrid bulkActionButtons={false}>
+                    <TextField source="name" label="対象" />
+                    <NumberField source="first_allowance" label="1年卒" options={{ style: "currency", currency: "JPY" }}/>
+                    <NumberField source="second_allowance" label="2年卒" options={{ style: "currency", currency: "JPY" }}/>
+                    <NumberField source="third_allowance" label="3年卒" options={{ style: "currency", currency: "JPY" }}/>
+                    <NumberField source="fourth_allowance" label="4年卒" options={{ style: "currency", currency: "JPY" }}/>
+                </Datagrid>
             </ArrayField>
             <ArrayField source="welfare_benefits" label="福利厚生">
-              <SingleFieldList linkType={false}>
+            <SingleFieldList linkType={false}>
                 <FunctionField render={(v: any) => <Chip size="small" label={String(v)} />} />
-              </SingleFieldList>
+            </SingleFieldList>
             </ArrayField>
-          </TabbedShowLayout.Tab>
+        </TabbedShowLayout.Tab>
 
-          <TabbedShowLayout.Tab label="選考・提出物">
+        <TabbedShowLayout.Tab label="選考・提出物">
             <TextField source="recruitment_flow" label="選考フロー" emptyText="未登録" />
             <ArrayField source="submission_objects" label="提出物">
-              <SingleFieldList linkType={false}>
+            <SingleFieldList linkType={false}>
                 <FunctionField render={(v: any) => <Chip size="small" label={String(v)} />} />
-              </SingleFieldList>
+            </SingleFieldList>
             </ArrayField>
-          </TabbedShowLayout.Tab>
-          
-          <TabbedShowLayout.Tab label="備考">
-            <TextField source="note" label="備考" />
-          </TabbedShowLayout.Tab>
+        </TabbedShowLayout.Tab>
 
-          <TabbedShowLayout.Tab label="メタ情報">
-            <DateField source="created_at" label="作成日" emptyText="未登録" />
-            <DateField source="updated_at" label="更新日" emptyText="未登録" />
-          </TabbedShowLayout.Tab>
+        <TabbedShowLayout.Tab label="備考">
+            <TextField source="note" label="備考" />
+        </TabbedShowLayout.Tab>
+
+        <TabbedShowLayout.Tab label="メタ情報">
+            <DateField
+                    source="created_at"
+                    label="作成日"
+                    showTime 
+                    locales="ja-JP" 
+                    options={{ 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }}/>
+            <DateField
+                    source="updated_at"
+                    label="最終更新日"
+                    showTime 
+                    locales="ja-JP" 
+                    options={{ 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    }}/>
+        </TabbedShowLayout.Tab>
         </TabbedShowLayout>
-      </FullRecordGate>
+    </FullRecordGate>
     </Show>
   );
 };
