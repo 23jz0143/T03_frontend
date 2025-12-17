@@ -11,7 +11,7 @@ import {
 const validateRequired = required('必須項目です');
 
 export const CompanyEdit = () => (
-    <Edit title="会社情報編集">
+    <Edit title="会社情報編集" redirect="show">
         <SimpleForm>
             <TextInput
                 source="company_name"

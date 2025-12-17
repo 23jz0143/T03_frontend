@@ -1,7 +1,13 @@
-import { Edit, SimpleForm, TextInput } from "react-admin";
+import { Edit, ListButton, SimpleForm, TextInput, TopToolbar } from "react-admin";
+
+const UserEditActions = () => (
+  <TopToolbar sx={{ justifyContent: "space-between" }}>
+    <ListButton label="キャンセル " icon={false} />
+  </TopToolbar>
+);
 
 export const UserEdit = () => (
-  <Edit>
+  <Edit actions={<UserEditActions />}>
     <SimpleForm>
       <TextInput source="id"  disabled/>
       <TextInput source="account_name" />

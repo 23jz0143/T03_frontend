@@ -15,10 +15,9 @@ export const CompanyAccountsList = () => {
       ) : (
         <Datagrid rowClick="show">
           <TextField source="id" />
-          <TextField source="account_name" />
-          <TextField source="company_name" />
+          <TextField source="account_name" label="アカウント名" />
+          <TextField source="company_name" label="企業名" />
           {/* <TextField source="password" /> */}
-          {/* <ShowButton label="詳細" /> */}
           <EditButton label="編集" />
         </Datagrid>
       )}
