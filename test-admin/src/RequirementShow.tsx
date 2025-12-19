@@ -10,115 +10,118 @@ const DEBUG = true;
 const dlog = (...args: any[]) => DEBUG && console.debug("[RequirementShow]", ...args);
 
 const FullRecordGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { record, isFetching } = useShowContext<any>();
+    const { record, isFetching } = useShowContext<any>();
 
-  useEffect(() => {
-    dlog("record changed", { record, isFetching, _full: record?._full });
-  }, [record, isFetching]);
+    useEffect(() => {
+        dlog("record changed", { record, isFetching, _full: record?._full });
+    }, [record, isFetching]);
 
-  if (!record || !record._full || isFetching) {
-    dlog("waiting full record...", {
-      hasRecord: !!record,
-      _full: record?._full,
-      isFetching,
-    });
-    return (
-      <Box p={2} display="flex" alignItems="center" gap={1}>
-        <CircularProgress size={18} /> 読み込み中...
-      </Box>
-    );
-  }
-  dlog("ready (full record)");
-  return <>{children}</>;
+    if (!record || !record._full || isFetching) {
+        dlog("waiting full record...", {
+        hasRecord: !!record,
+        _full: record?._full,
+        isFetching,
+        });
+        return (
+        <Box p={2} display="flex" alignItems="center" gap={1}>
+            <CircularProgress size={18} /> 読み込み中...
+        </Box>
+        );
+    }
+    dlog("ready (full record)");
+    return <>{children}</>;
 };
 
 const SalaryDatagridSection: React.FC = () => {
-  const record = useRecordContext<any>();
-  if (!record) return null;
+    const record = useRecordContext<any>();
+    if (!record) return null;
 
-  const rows = [
-      { label: "月給(1年卒)", value: record.starting_salary_first },
-      { label: "月給(2年卒)", value: record.starting_salary_second },
-      { label: "月給(3年卒)", value: record.starting_salary_third },
-      { label: "月給(4年卒)", value: record.starting_salary_fourth },
-  ];
+    const rows = [
+        { label: "月給(1年卒)", value: record.starting_salary_first },
+        { label: "月給(2年卒)", value: record.starting_salary_second },
+        { label: "月給(3年卒)", value: record.starting_salary_third },
+        { label: "月給(4年卒)", value: record.starting_salary_fourth },
+    ];
 
-  // ArrayField に渡すため、一時的に record に salary_rows を載せる
-  return (
-      <RecordContextProvider value={{ ...record, salary_rows: rows }}>
-          <ArrayField source="salary_rows" label="月給">
-              <Datagrid bulkActionButtons={false}>
-                  <TextField source="label" label="区分" />
-                  <NumberField
-                      source="value"
-                      label="金額"
-                      options={{ style: "currency", currency: "JPY" }}
-                      emptyText="未登録"
-                      textAlign="right"
-                  />
-              </Datagrid>
-          </ArrayField>
-      </RecordContextProvider>
-  );
+    // ArrayField に渡すため、一時的に record に salary_rows を載せる
+    return (
+        <RecordContextProvider value={{ ...record, salary_rows: rows }}>
+            <ArrayField source="salary_rows" label="月給">
+                <Datagrid bulkActionButtons={false}>
+                    <TextField source="label" label="区分" />
+                    <NumberField
+                        source="value"
+                        label="金額"
+                        options={{ style: "currency", currency: "JPY" }}
+                        emptyText="未登録"
+                        textAlign="right"
+                    />
+                </Datagrid>
+            </ArrayField>
+        </RecordContextProvider>
+    );
 };
 
 const RequirementShowActions = () => {
-  const record = useRecordContext();
-  const { id } = useParams();
-  if (!record || !record.advertisement_id) {
-      console.log("no record or no advertisement_id", record);
-  }
+    const record = useRecordContext();
+    const { id } = useParams();
+    if (!record || !record.advertisement_id) {
+        console.log("no record or no advertisement_id", record);
+    }
 
-  const advertisementId = record?.advertisement_id || (id ? sessionStorage.getItem(`reqAdv:${id}`) : null);
+    const advertisementId = record?.advertisement_id || (id ? sessionStorage.getItem(`reqAdv:${id}`) : null);
+    const from = advertisementId ? sessionStorage.getItem(`advFrom:${advertisementId}`) : null;
 
-  useEffect(() => {
-      console.log("Actions render. ID:", id, " advID:", advertisementId, " record:", record);
-  }, [record, id, advertisementId]);
-  if (!advertisementId) {
-      console.log("no advertisement_id in record", record);
-  }
+    const backTo =
+        advertisementId
+            ? (from === "pendings"
+                ? `/pendings/${advertisementId}/show`
+                : `/advertisements/${advertisementId}/show`)
+            : undefined;
 
-  return (
-      <TopToolbar sx={{ justifyContent: "space-between" }}>
-          <Box>
-              {advertisementId && (
-                  <Button
-                      component = {Link}
-                      to = {`/advertisements/${advertisementId}/show/1`}
-                      startIcon = {<ArrowBackIcon />}
-                      label = "求人票に戻る"
-                  />
-              )}
-          </Box>
-          <EditButton />
-      </TopToolbar>
-  )
+    const canEdit = from !== "pendings";
+
+    return (
+        <TopToolbar sx={{ justifyContent: "space-between" }}>
+            <Box>
+                {advertisementId && backTo && (
+                    <Button
+                        component = {Link}
+                        to = {backTo}
+                        startIcon = {<ArrowBackIcon />}
+                        label = "求人票に戻る"
+                    />
+                )}
+            </Box>
+            {canEdit ? <EditButton label="編集" /> : null}
+        </TopToolbar>
+    )
 }
 
 
 export const RequirementShow = () => {
-  const refresh = useRefresh();
+    const refresh = useRefresh();
 
-  useEffect(() => {
-    dlog("mounted at", window.location.href);
-    return () => dlog("unmounted");
-  }, []);
+    useEffect(() => {
+        dlog("mounted at", window.location.href);
+        return () => dlog("unmounted");
+    }, []);
 
-  // bfcache 復元時は必ず再取得＋ログ
-  useEffect(() => {
-    const onPageShow = (e: PageTransitionEvent) => {
-      const persisted = (e as any).persisted;
-      dlog("pageshow", { persisted });
-      if (persisted) {
-        dlog("pageshow persisted -> refresh()");
-        refresh();
-      }
+    // bfcache 復元時は必ず再取得＋ログ
+    useEffect(() => {
+        const onPageShow = (e: PageTransitionEvent) => {
+        const persisted = (e as any).persisted;
+        dlog("pageshow", { persisted });
+        if (persisted) {
+            dlog("pageshow persisted -> refresh()");
+            refresh();
+        }
     };
     window.addEventListener("pageshow", onPageShow as any);
     return () => window.removeEventListener("pageshow", onPageShow as any);
-  }, [refresh]);
+    }, [refresh]);
 
-  return (
+    return (
     <Show actions={<RequirementShowActions />} title="募集要項詳細">
         <FullRecordGate>
         <TabbedShowLayout>
@@ -221,5 +224,5 @@ export const RequirementShow = () => {
         </TabbedShowLayout>
     </FullRecordGate>
     </Show>
-  );
+    );
 };

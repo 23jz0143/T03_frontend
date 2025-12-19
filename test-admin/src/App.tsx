@@ -6,11 +6,13 @@ import { UserEdit } from "./UserEdit";
 import { UserCreate } from "./userCreate";
 import { AccountCircle } from "@mui/icons-material";
 import { Approval_pendingList } from "./approval_pending";
-import { AdvertisementsList } from "./AdvertisementsList";
 import { ApprovalPendingShow } from "./ApprovalPendingShow";
+import { AdvertisementsList } from "./AdvertisementsList";
 import { AdvertisementsShow } from "./AdvertisementsShow";
-import { RequirementShow } from "./RequirementShow";
+import { AdvertisementEdit } from "./AdvertisementEdit";
 import { AdvertisementCreate } from "./AdvertisementCreate";
+import { RequirementShow } from "./RequirementShow";
+import { RequirementEdit } from "./RequirementEdit";
 import { LoginPage } from "./LoginPage";
 import { authProvider } from "./authProvider";
 import { CompanyShow } from "./CompanyShow";
@@ -127,6 +129,7 @@ const customDataProvider: DataProvider = {
       if (!companyId) {
         throw new Error("company_id が不明です。公開許可待ち一覧からレコードを開いてください。");
       }
+      sessionStorage.setItem(`advFrom:${id}`, "pendings");
 
       url = `/api/companies/${companyId}/advertisements/${id}`;
     } else if (resource === "advertisements") {
@@ -551,7 +554,22 @@ const customDataProvider: DataProvider = {
         updated_at: new Date().toISOString(),
       };
       delete dataToSubmit.industry_ids;
+    } else if(resource === "advertisements") {
+      url = `/api/companies/${data.company_id}/advertisements/${id}`;
+      dataToSubmit = {
+        ...data,
+        tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids.map(Number) : (data.tag_ids || []),
+      }
+    } else if(resource === "requirements") {
+      const advId = data.advertisement_id;
+      if (!advId) throw new Error("求人票IDが不明です");
 
+      url = `/api/companies/${data.company_id}/advertisements/${advId}/requirements/${id}`;
+      dataToSubmit = {
+        ...data,
+      };
+    } else {
+      throw new Error(`リソース ${resource} の更新はサポートされていません。`);
     }
     try {
       const response = await fetch(url, {
@@ -675,9 +693,13 @@ const App = () => (
       list={AdvertisementsList}
       show={AdvertisementsShow}
       create={AdvertisementCreate}
+      edit={AdvertisementEdit}
       options={{ label: "求人票一覧" }}
     />
-    <Resource name="requirements" show={RequirementShow} />
+    <Resource name="requirements"
+      show={RequirementShow}
+      edit={RequirementEdit}
+    />
     <Resource name="tags" />
     <Resource name="industries" />
     <Resource name="job_categories" />  

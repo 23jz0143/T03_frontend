@@ -1,6 +1,11 @@
-import { Datagrid, TextField, DateField, List, SimpleList, SelectInput } from "react-admin";
+import { Datagrid, TextField, DateField, List, SimpleList, SelectInput, TopToolbar, CreateButton } from "react-admin";
 import { useMediaQuery } from "@mui/material";
 import { useMemo } from "react";
+
+const ListActions = () => (
+    <TopToolbar>
+    </TopToolbar>
+);
 
 export const AdvertisementsList = () => {
     const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm"));
@@ -20,6 +25,7 @@ export const AdvertisementsList = () => {
         <List
             filters={[<SelectInput key="year" source="year" label="年度" choices={yearChoices} alwaysOn/>]}
             filterDefaultValues={{ year: currentYear }}
+            actions={<ListActions />}
         >
             {isSmall ? (
                 <SimpleList
@@ -27,7 +33,7 @@ export const AdvertisementsList = () => {
                     secondaryText={(record) => record.company_name}
                 />
             ) : (
-                <Datagrid rowClick="show">
+                <Datagrid rowClick="show" bulkActionButtons={false}>
                     <TextField source="id" label="ID" />
                     <TextField source="company_name" label="会社名" />
                     <TextField source="company_id" />
