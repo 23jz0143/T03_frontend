@@ -29,11 +29,11 @@ export const LoginPage = () => {
 
       if (data.attribute == "学生") {
         alert("学生アカウントでは管理画面を利用できません。");
-        localStorage.removeItem("authToken");
+        sessionStorage.removeItem("authToken");
         return; // login() を呼ばず終了
       }
 
-      localStorage.setItem("authToken", data.session_token);
+      sessionStorage.setItem("authToken", data.session_token);
 
       // react-admin 側の状態更新
       await login({ provider: "google", credential: idToken });
