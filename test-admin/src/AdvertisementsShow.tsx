@@ -13,6 +13,7 @@ import {
   useRedirect,
   TopToolbar,
   Button,
+  EditButton,
 } from "react-admin";
 import { Chip } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -51,6 +52,7 @@ const AdvertisementsShowActions = () => {
         label="一覧へ戻る"
         onClick={() => redirect("list", "advertisements")}
       />
+      <EditButton label="編集" />
     </TopToolbar>
   );
 };
@@ -67,9 +69,21 @@ export const AdvertisementsShow = () => (
           }}
         />
         <FunctionField
+          label="会社名（ふりがな）"
+          render={(r: any) => {
+            const v = r?.company_name_furigana ?? r?.company?.name_furigana;
+            return v ? v : "未登録";
+          }}
+        />
+        <FunctionField
           source="year"
           label="対象年"
           render={(record) => record.year + " 年"}
+        />
+        <FunctionField
+          source="age_limit"
+          label="年齢制限"
+          render={(record) => record.age_limit + " 歳以下"}
         />
         <FunctionField
           source="average_age"
@@ -93,16 +107,8 @@ export const AdvertisementsShow = () => (
         />
         <TextField source="briefing_info" label="説明会情報" />
         <UrlField source="homepage_url" label="ホームページURL" />
-        <FunctionField
-          label="留学生採用"
-          render={(r: any) =>
-            r?.international_student_recruitment === true
-              ? "はい"
-              : r?.international_student_recruitment === false
-              ? "いいえ"
-              : "未登録"
-          }
-        />
+        <FunctionField source="mynavi_url" label="マイナビURL" render={record => record.mynavi_url ? <UrlField source="mynavi_url" label="マイナビURL" target="_blank"/> : "未登録"}/>
+        <FunctionField source="rikunavi_url" label="リクナビURL" render={record => record.rikunavi_url ? <UrlField source="rikunavi_url" label="リクナビURL" target="_blank"/> : "未登録"} />
         <TextField source="job_recruiter_name" label="採用担当者名" />
         <FunctionField
           source="recruiting_count"

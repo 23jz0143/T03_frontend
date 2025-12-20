@@ -35,18 +35,12 @@ export const AdvertisementCreate = () => (
         placeholder="10"
         helperText="半角数字で入力してください"
       />
-      <SelectInput
-        source="international_student_recruitment"
-        label="留学生採用"
-        choices={[
-          { id: true, name: "有り" },
-          { id: false, name: "無し" },
-          { id: null, name: "不明" },
-        ]}
-        optionValue="id"
-        optionText="name"
+      <NumberInput
+        source="age_limit"
+        label="年齢制限（歳以下）"
         validate={validateRequired}
-        helperText="留学生の採用有無を選択してください"
+        placeholder="25"
+        helperText="半角英数字で入力してください"
       />
 
       <NumberInput

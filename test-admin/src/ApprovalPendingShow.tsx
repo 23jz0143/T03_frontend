@@ -125,14 +125,19 @@ export const ApprovalPendingShow = () => {
       {/* 戻るで来たときのガード */}
       <PendingGuard />
 
-      
-
       <TabbedShowLayout>
       <TabbedShowLayout.Tab label="概要">
         <FunctionField
           label="会社名"
           render={(r: any) => {
             const v = r?.company_name ?? r?.company?.name;
+            return v ? v : "未登録";
+          }}
+        />
+        <FunctionField
+          label="会社名（ふりがな）"
+          render={(r: any) => {
+            const v = r?.company_name_furigana ?? r?.company?.name_furigana;
             return v ? v : "未登録";
           }}
         />
