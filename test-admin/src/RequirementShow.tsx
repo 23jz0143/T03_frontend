@@ -93,7 +93,7 @@ const RequirementShowActions = () => {
                     />
                 )}
             </Box>
-            {canEdit ? <EditButton label="編集" /> : null}
+            {canEdit ? <EditButton label="募集要項編集" /> : null}
         </TopToolbar>
     )
 }

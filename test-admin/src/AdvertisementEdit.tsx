@@ -5,14 +5,22 @@ import {
     NumberInput,
     required,
     ReferenceArrayInput,
-    CheckboxGroupInput
+    CheckboxGroupInput,
+    TopToolbar,
+    ShowButton,
 } from "react-admin";
 
 const validateRequired = required('必須項目です');
 
+const EditActions = () => (
+    <TopToolbar sx={{ justifyContent: "space-between" }}>
+        <ShowButton label="キャンセル " icon={false} />
+    </TopToolbar>
+);
+
 export const AdvertisementEdit = () => {
     return (
-        <Edit title="求人票編集">
+        <Edit title="求人票編集" actions={<EditActions />}>
             <SimpleForm>
                 <NumberInput 
                             source="year"

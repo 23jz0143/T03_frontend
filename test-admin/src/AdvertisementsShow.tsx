@@ -15,13 +15,13 @@ import {
   Button,
   EditButton,
 } from "react-admin";
-import { Chip } from "@mui/material";
+import { Chip, Box, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 // 親（求人票）レコードから company_id, id を取得して列を組み立て
 const RequirementColumns = () => {
   return (
-    <Datagrid bulkActionButtons={false}>
+    <Datagrid bulkActionButtons={false} empty={<EmptyRequirement />}>
       <TextField source="id" label="ID" />
       <TextField source="employment_status" label="雇用形態" />
       <TextField source="job_categories_name" label="職種" />
@@ -52,10 +52,18 @@ const AdvertisementsShowActions = () => {
         label="一覧へ戻る"
         onClick={() => redirect("list", "advertisements")}
       />
-      <EditButton label="編集" />
+      <EditButton label="求人票編集" />
     </TopToolbar>
   );
 };
+
+const EmptyRequirement = () => (
+  <Box sx={{ textAlign: 'center', width: '100%'}}>
+    <Typography variant="h6" color="textSecondary">
+      募集要項はまだ登録されていません
+    </Typography>
+  </Box>
+);
 
 export const AdvertisementsShow = () => (
   <Show title="求人票詳細" actions={<AdvertisementsShowActions />}>
