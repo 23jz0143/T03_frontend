@@ -11,11 +11,19 @@ import {
     CheckboxGroupInput,
     RadioButtonGroupInput,
     useInput,
-    useGetList
+    useGetList,
+    TopToolbar,
+    ShowButton,
 } from "react-admin";
 import { Checkbox, FormControlLabel, FormGroup, Typography, Grid, FormControl, FormLabel, FormHelperText } from '@mui/material';
 
 const validateRequired = required('必須項目です');
+
+const EditActions = () => (
+    <TopToolbar sx={{ justifyContent: "space-between" }}>
+        <ShowButton label="キャンセル " icon={false} />
+    </TopToolbar>
+);
 
 const GroupedPrefectureInput = ({source, choices = [], isLoading, label, helperText, validate}) => {
     const {
@@ -105,7 +113,7 @@ export const RequirementEdit = () => {
             }
         );
     return (
-        <Edit title="募集要項編集">
+        <Edit title="募集要項編集" actions={<EditActions />}>
             <SimpleForm>
                 <ReferenceInput source="job_category_id" reference="job_categories" label="職種">
                     <RadioButtonGroupInput optionText="job_category_name" label="職種" validate={validateRequired} helperText="一つ選択してください"/>

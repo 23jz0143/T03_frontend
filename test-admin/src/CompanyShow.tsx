@@ -11,23 +11,35 @@ import {
     TopToolbar,
     EditButton,
     Button,
-
+    useRecordContext,
 } from "react-admin";
 
 import { Link } from "react-router-dom";
 import { Box, Chip } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-const ProductShowActions = () => (
-    <TopToolbar sx={{ justifyContent: "space-between" }}>
-        <Box>
-            <Button label="一覧に戻る" component={Link} to="/accounts" >
-                <ArrowBackIcon />
-            </Button>
-        </Box>
-        <EditButton label="編集"/>
-    </TopToolbar>
-);
+const ProductShowActions = () => {
+    const record = useRecordContext();
+    return (
+        <TopToolbar sx={{ justifyContent: "space-between" }}>
+            <Box>
+                <Button label="一覧に戻る" component={Link} to="/accounts" >
+                    <ArrowBackIcon />
+                </Button>
+            </Box>
+        
+            <Box sx={{ display: "flex", gap: 3, ml: "auto" }}>
+                <EditButton label="会社情報編集"/>
+                <Button
+                    label="求人票新規作成"
+                    component={Link}
+                    to="/advertisements/create"
+                    state={{ fromCompanyId: record?.id}}
+                />
+            </Box>
+        </TopToolbar>
+    );
+};
 
 export const CompanyShow = () => {
     return (

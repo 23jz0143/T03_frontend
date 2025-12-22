@@ -42,38 +42,8 @@ const customDataProvider: DataProvider = {
       url = `${listBaseUrl}/accounts?per_page=${per_page}&page=${page}`;
     }
 
-    // --- industries (業種一覧) の取得処理を追加 ---
-    if (resource === "industries") {
-      // 企業側と同じAPIエンドポイントを使用
-      const resp = await fetch(`/api/list/industries`, {
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-      const raw = await resp.json();
-      const data = (Array.isArray(raw) ? raw : []).map((item: any) => ({
-        ...item,
-        id: String(item.id),
-      }));
-      return { data, total: data.length };
-    }
-    
-    // --- tags の取得処理 (既存) ---
-    if (resource === "tags") {
-      const resp = await fetch(`/api/list/tags`, {
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-      });
-      if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
-      const raw = await resp.json();
-      const data = (Array.isArray(raw) ? raw : []).map((t: any) => {
-        const id = t?.id ?? t?.value ?? (typeof t === "string" ? t : undefined);
-        const tag_name = t?.tag_name ?? t?.name ?? t?.label ?? (typeof t === "string" ? t : "");
-        return { id: String(id), tag_name };
-      });
-      return { data, total: data.length };
-    }
-
     // --- advertisements の取得処理 (既存) ---
-    if (resource === "advertisements") {
+    else if (resource === "advertisements") {
       console.log("getList advertisements params:", params);
       const year = (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
       url = `/api/admin/advertisements?year=${year}&per_page=${per_page}&page=${page}`;
@@ -84,20 +54,30 @@ const customDataProvider: DataProvider = {
       url = `/api/admin/advertisements/pendings?per_page=${per_page}&page=${page}`;
     }
 
-    // デフォルトの処理 (jsonServerProvider互換)
+    else {
+      url = `/api/list/${resource}`;
+    }
+
+    
     const response = await fetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);    
     const json = await response.json();
-    const totalJson = json.total;
-    const dataJson = json.data;
-    console.log(`getList ${resource} response:`, { totalJson, dataJson });
+    const rawData = Array.isArray(json) ? json : json.data ?? json;
+    const rawTotal = 
+      (Array.isArray(json) ? null : json.total) ??
+      (Array.isArray(rawData) ? rawData.length : 1);
+
+    const data = (Array.isArray(rawData) ? rawData : [rawData]).map((item: any) => ({
+      ...item,
+      id: String(item?.id),
+    }));
 
     // IDのマッピング保存処理 (既存)
-    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(dataJson)) {
-      dataJson.forEach((item: any) => {
+    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(data)) {
+      data.forEach((item: any) => {
         if (item?.id != null && item?.company_id != null) {
           sessionStorage.setItem(`advCompany:${item.id}`, String(item.company_id));
         }
@@ -105,8 +85,8 @@ const customDataProvider: DataProvider = {
     }
 
     return {
-      data: Array.isArray(dataJson) ? dataJson.map((item) => ({ ...item, id: item.id })) : [{ ...dataJson, id: dataJson.id }],
-      total: totalJson,
+      data,
+      total: Number(rawTotal),
     };
   },
 
@@ -487,17 +467,11 @@ const customDataProvider: DataProvider = {
 
       dataToSubmit = {
         ...params.data,
-        company_id: Number(companyId),
-        pending:
-          params.data.pending !== undefined
-            ? Boolean(params.data.pending)
-            : false,
         tag_ids: Array.isArray(params.data.tag_ids)
           ? params.data.tag_ids.map(Number)
           : [],
-        updated_at: new Date().toISOString(),
-        created_at: new Date().toISOString(),
       };
+      console.log("Creating advertisement with data:", dataToSubmit);
     } else {
       throw new Error(`リソース ${resource} の作成はサポートされていません。`);
     }
@@ -522,6 +496,15 @@ const customDataProvider: DataProvider = {
 
       const responseData = await response.json();
       console.log(`CREATE Success (${resource}):`, responseData);
+
+      if (resource === "advertisements") {
+        const createdId = responseData?.id;
+        const companyId = params.data.company_id;
+        if (createdId != null && companyId != null) {
+          sessionStorage.setItem(`advCompany:${createdId}`, String(companyId));
+          logDP("Saved advCompany (create)", { id: createdId, companyId });
+        }
+      }
 
       return { data: { ...responseData, id: responseData.id } };
     } catch (error) {

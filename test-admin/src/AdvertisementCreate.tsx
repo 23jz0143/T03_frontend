@@ -5,15 +5,45 @@ import {
   NumberInput,
   required,
   ReferenceArrayInput,
-  AutocompleteArrayInput,
-  SelectInput,
+  CheckboxGroupInput,
+  TopToolbar,
+  Button,
 } from "react-admin";
+import { useLocation, Link } from "react-router-dom";
 
 const validateRequired = required("必須項目です");
 
-export const AdvertisementCreate = () => (
-  <Create resource="advertisements">
-    <SimpleForm>
+const CreateActions = () => {
+  const location = useLocation();
+  const fromCompanyId = (location.state as any)?.fromCompanyId;
+
+  return (
+    <TopToolbar sx={{ justifyContent: "space-between" }}>
+        {fromCompanyId ? (
+        <Button
+          label="キャンセル"
+          component={Link}
+          to={`/company/${fromCompanyId}/show`}
+        />
+      ) : (
+        // フォールバック（渡ってこない場合）
+        <Button label="キャンセル" component={Link} to="/advertisements" />
+      )}
+    </TopToolbar>
+  );
+};
+
+export const AdvertisementCreate = () => {
+  const location = useLocation();
+  const fromCompanyId = (location.state as any)?.fromCompanyId;
+
+  return (
+  <Create resource="advertisements" title="求人票新規作成" actions={<CreateActions />} redirect="show">
+    <SimpleForm
+      defaultValues={{
+        ...(fromCompanyId ? { company_id: String(fromCompanyId) } : {}),
+      }}
+    >
       <NumberInput
         source="year"
         label="年度"
@@ -107,7 +137,7 @@ export const AdvertisementCreate = () => (
         helperText="説明会資料のURLがあれば入力してください"
       />
       <ReferenceArrayInput source="tag_ids" reference="tags" label="タグ">
-        <AutocompleteArrayInput
+        <CheckboxGroupInput
           optionText="tag_name"
           helperText={
             <>
@@ -120,4 +150,5 @@ export const AdvertisementCreate = () => (
       </ReferenceArrayInput>
     </SimpleForm>
   </Create>
-);
+  );
+};
