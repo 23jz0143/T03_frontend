@@ -46,7 +46,7 @@ export const AdvertisementCreate = () => {
     >
       <NumberInput
         source="year"
-        label="年度"
+        label="対象年（卒）"
         validate={validateRequired}
         placeholder="2025"
         helperText="半角数字で入力してください"

@@ -24,7 +24,7 @@ export const AdvertisementEdit = () => {
             <SimpleForm>
                 <NumberInput 
                             source="year"
-                            label="年度"
+                            label="対象年（卒）"
                             placeholder="2026"
                             helperText="半角数字で入力してください"
                             validate={validateRequired} />
