@@ -13,6 +13,7 @@ import { AdvertisementEdit } from "./AdvertisementEdit";
 import { AdvertisementCreate } from "./AdvertisementCreate";
 import { RequirementShow } from "./RequirementShow";
 import { RequirementEdit } from "./RequirementEdit";
+import { RequirementCreate } from "./RequirementCreate";
 import { LoginPage } from "./LoginPage";
 import { authProvider } from "./authProvider";
 import { CompanyShow } from "./CompanyShow";
@@ -682,6 +683,7 @@ const App = () => (
     <Resource name="requirements"
       show={RequirementShow}
       edit={RequirementEdit}
+      create={RequirementCreate}
     />
     <Resource name="tags" />
     <Resource name="industries" />
