@@ -23,7 +23,7 @@ export const AdvertisementsList = () => {
 
     return (
         <List
-            filters={[<SelectInput key="year" source="year" label="年度" choices={yearChoices} alwaysOn/>]}
+            filters={[<SelectInput key="year" source="year" label="対象年（卒）" choices={yearChoices} alwaysOn/>]}
             filterDefaultValues={{ year: currentYear }}
             actions={<ListActions />}
         >

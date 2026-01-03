@@ -14,6 +14,8 @@ import {
   TopToolbar,
   Button,
   EditButton,
+  CreateButton,
+  useRecordContext,
 } from "react-admin";
 import { Chip, Box, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -41,6 +43,21 @@ const RequirementColumns = () => {
       <DateField source="updated_at" label="更新日" />
     </Datagrid>
   );
+};
+
+const RequirementListActions = () => {
+  const record = useRecordContext();
+  if (!record) return null;
+
+  return (
+    <TopToolbar>
+      <CreateButton
+        resource="requirements"
+        label="募集要項を新規作成"
+        state={{ record: { advertisement_id: record.id } }}
+      />
+    </TopToolbar>
+  )
 };
 
 const AdvertisementsShowActions = () => {
@@ -85,7 +102,7 @@ export const AdvertisementsShow = () => (
         />
         <FunctionField
           source="year"
-          label="対象年"
+          label="対象年（卒）"
           render={(record) => record.year + " 年"}
         />
         <FunctionField
@@ -144,6 +161,7 @@ export const AdvertisementsShow = () => (
         >
           <RequirementColumns />
         </ReferenceManyField>
+        <RequirementListActions />
       </TabbedShowLayout.Tab>
       <TabbedShowLayout.Tab label="ID">
         <TextField source="id" label="ID" />
