@@ -31,6 +31,26 @@ const toNumber = (val: any): number => {
   return isNaN(number) ? 0 : number;
 };
 
+const toStringSafe = (val: any): string => {
+  if (val === null || val === undefined) return "";
+  return String(val);
+};
+
+const normalizeNumberString = (val: string): string => {
+  // e.g. "10,000" or full-width digits "１００００"
+  return val
+    .replace(/,/g, "")
+    .replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))
+    .trim();
+};
+
+const toOptionalNumber = (val: any): number | null => {
+  if (val === null || val === undefined || val === "") return null;
+  const raw = typeof val === "string" ? normalizeNumberString(val) : val;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+};
+
 const customDataProvider: DataProvider = {
   ...baseProvider,
 
@@ -267,13 +287,15 @@ const customDataProvider: DataProvider = {
         // prefecture (都道府県)
         if (!data.prefecture_id || data.prefecture_id.length === 0) {
           const prefNames = data.prefectures || data.prefecture_names;
-          data.prefecture_id = Array.isArray(prefNames)
-            ? prefNames
-                .map((name: any) =>
-                  findIdByName(prefs, name, ["name", "prefecture_name"])
-                )
-                .filter((id: any) => id !== null)
-            : [];
+          if (Array.isArray(prefNames)) {
+            data.prefecture_id = prefNames
+              .map((name: any) =>
+                findIdByName(prefs, name, ["name", "prefecture_name"])
+              )
+              .filter((id: any) => id !== null);
+          } else {
+            data.prefecture_id = [];
+          }
         }
 
         // welfare_benefits (福利厚生)
@@ -473,6 +495,97 @@ const customDataProvider: DataProvider = {
           : [],
       };
       console.log("Creating advertisement with data:", dataToSubmit);
+    } else if(resource === "requirements") {
+      const companyId = params.data.company_id;
+      const advId = params.data.advertisement_id;
+
+      if (!companyId) {
+        throw new Error("company_id が指定されていません。");
+      }
+      if (!advId) {
+        throw new Error("advertisement_id が指定されていません。");
+      }
+
+      url = `/api/companies/${companyId}/advertisements/${advId}/requirements`;
+
+      const processedAllowances = Array.isArray(params.data.various_allowances)
+        ? params.data.various_allowances
+            .map((item: any) => {
+              const name = toStringSafe(item.name).trim();
+              const first_allowance = toOptionalNumber(item.first_allowance);
+              const second_allowance = toOptionalNumber(item.second_allowance);
+              const third_allowance = toOptionalNumber(item.third_allowance);
+              const fourth_allowance = toOptionalNumber(item.fourth_allowance);
+
+              return {
+                name,
+                first_allowance,
+                second_allowance,
+                third_allowance,
+                fourth_allowance,
+              };
+            })
+            .filter((row: any) => {
+              return (
+                row.name !== "" ||
+                row.first_allowance !== null ||
+                row.second_allowance !== null ||
+                row.third_allowance !== null ||
+                row.fourth_allowance !== null
+              );
+            })
+        : [];
+
+      dataToSubmit = {
+        advertisement_id: Number(advId),
+        job_category_id: toNumber(params.data.job_category_id),
+
+        // 文字列系 (undefined対策)
+        recruitment_flow: toStringSafe(params.data.recruitment_flow),
+        employment_status: toStringSafe(params.data.employment_status),
+        required_days: toStringSafe(params.data.required_days),
+        trial_period: toStringSafe(params.data.trial_period),
+        working_hours: toStringSafe(params.data.working_hours),
+        note: toStringSafe(params.data.note),
+
+        // 数値系
+        recruiting_count: toNumber(params.data.recruiting_count),
+        starting_salary_first: toNumber(params.data.starting_salary_first),
+        starting_salary_second: toNumber(params.data.starting_salary_second),
+        starting_salary_third: toNumber(params.data.starting_salary_third),
+        starting_salary_fourth: toNumber(params.data.starting_salary_fourth),
+        salary_increase: toNumber(params.data.salary_increase),
+        bonus: toNumber(params.data.bonus),
+        holiday_leave: toNumber(params.data.holiday_leave),
+
+        // Boolean(Varchar)系 "あり"/"なし"
+        flex: params.data.flex,
+        employee_dormitory: params.data.employee_dormitory,
+        contract_housing: params.data.contract_housing,
+
+        // 配列系
+        submission_objects_id: Array.isArray(params.data.submission_objects_id)
+          ? params.data.submission_objects_id.map(Number)
+          : [],
+
+        prefecture_id: Array.isArray(params.data.prefecture_id)
+          ? params.data.prefecture_id.map(Number)
+          : params.data.prefecture_id
+          ? [toNumber(params.data.prefecture_id)]
+          : [],
+
+        welfare_benefits_id: Array.isArray(params.data.welfare_benefits_id)
+          ? params.data.welfare_benefits_id.map(Number)
+          : [],
+
+        // 1行=1手当（first〜fourthを同一オブジェクトで送る）
+        various_allowances: processedAllowances,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+      };
+      delete dataToSubmit.company_id;
+
+      console.log("Creating requirement with data:", dataToSubmit);
     } else {
       throw new Error(`リソース ${resource} の作成はサポートされていません。`);
     }
@@ -504,6 +617,17 @@ const customDataProvider: DataProvider = {
         if (createdId != null && companyId != null) {
           sessionStorage.setItem(`advCompany:${createdId}`, String(companyId));
           logDP("Saved advCompany (create)", { id: createdId, companyId });
+        }
+      }
+
+      if(resource === "requirements") {
+        const createdId = responseData?.id;
+        const advId = params.data.advertisement_id;
+        const companyId = params.data.company_id;
+        if (createdId != null && advId != null && companyId != null) {
+          sessionStorage.setItem(`reqAdv:${createdId}`, String(advId));
+          sessionStorage.setItem(`reqCompany:${createdId}`, String(companyId));
+          sessionStorage.setItem(`advCompany:${advId}`, String(companyId));
         }
       }
 
@@ -545,12 +669,86 @@ const customDataProvider: DataProvider = {
         tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids.map(Number) : (data.tag_ids || []),
       }
     } else if(resource === "requirements") {
-      const advId = data.advertisement_id;
+      const advId = data.advertisement_id ?? sessionStorage.getItem(`reqAdv:${id}`);
+      const companyId = data.company_id ?? sessionStorage.getItem(`reqCompany:${id}`) ?? (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
+
       if (!advId) throw new Error("求人票IDが不明です");
 
-      url = `/api/companies/${data.company_id}/advertisements/${advId}/requirements/${id}`;
+      url = `/api/companies/${companyId}/advertisements/${advId}/requirements/${id}`;
+      const processedAllowances = Array.isArray(data.various_allowances)
+        ? data.various_allowances
+            .map((item: any) => {
+              const name = toStringSafe(item.name).trim();
+              const first_allowance = toOptionalNumber(item.first_allowance);
+              const second_allowance = toOptionalNumber(item.second_allowance);
+              const third_allowance = toOptionalNumber(item.third_allowance);
+              const fourth_allowance = toOptionalNumber(item.fourth_allowance);
+
+              return {
+                name,
+                first_allowance,
+                second_allowance,
+                third_allowance,
+                fourth_allowance,
+              };
+            })
+            .filter((row: any) => {
+              return (
+                row.name !== "" ||
+                row.first_allowance !== null ||
+                row.second_allowance !== null ||
+                row.third_allowance !== null ||
+                row.fourth_allowance !== null
+              );
+            })
+        : [];
+
       dataToSubmit = {
-        ...data,
+        advertisement_id: Number(advId),
+        job_category_id: toNumber(data.job_category_id),
+
+        // 文字列系 (undefined対策)
+        recruitment_flow: toStringSafe(data.recruitment_flow),
+        employment_status: toStringSafe(data.employment_status),
+        required_days: toStringSafe(data.required_days),
+        trial_period: toStringSafe(data.trial_period),
+        working_hours: toStringSafe(data.working_hours),
+        note: toStringSafe(data.note),
+
+        // 数値系
+        recruiting_count: toNumber(data.recruiting_count),
+        starting_salary_first: toNumber(data.starting_salary_first),
+        starting_salary_second: toNumber(data.starting_salary_second),
+        starting_salary_third: toNumber(data.starting_salary_third),
+        starting_salary_fourth: toNumber(data.starting_salary_fourth),
+        salary_increase: toNumber(data.salary_increase),
+        bonus: toNumber(data.bonus),
+        holiday_leave: toNumber(data.holiday_leave),
+
+        // Boolean(Varchar)系 "あり"/"なし"
+        flex: data.flex,
+        employee_dormitory: data.employee_dormitory,
+        contract_housing: data.contract_housing,
+
+        // 配列系
+        submission_objects_id: Array.isArray(data.submission_objects_id)
+          ? data.submission_objects_id.map(Number)
+          : [],
+
+        prefecture_id: Array.isArray(data.prefecture_id)
+          ? data.prefecture_id.map(Number)
+          : data.prefecture_id
+          ? [toNumber(data.prefecture_id)]
+          : [],
+
+        welfare_benefits_id: Array.isArray(data.welfare_benefits_id)
+          ? data.welfare_benefits_id.map(Number)
+          : [],
+
+        // 1行=1手当（first〜fourthを同一オブジェクトで送る）
+        various_allowances: processedAllowances,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
       };
     } else {
       throw new Error(`リソース ${resource} の更新はサポートされていません。`);

@@ -113,7 +113,7 @@ export const RequirementEdit = () => {
             }
         );
     return (
-        <Edit title="募集要項編集" actions={<EditActions />}>
+        <Edit title="募集要項編集" actions={<EditActions />} redirect="show">
             <SimpleForm>
                 <ReferenceInput source="job_category_id" reference="job_categories" label="職種">
                     <RadioButtonGroupInput optionText="job_category_name" label="職種" validate={validateRequired} helperText="一つ選択してください"/>

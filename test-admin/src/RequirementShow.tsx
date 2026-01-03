@@ -151,7 +151,13 @@ export const RequirementShow = () => {
             />
             <FunctionField
                 label="昇給"
-                render={(r: any) => (r?.salary_increase === 1 ? "あり" : r?.salary_increase === 0 ? "なし" : "未登録")}
+                render={(r: any) => {
+                    const v = r?.salary_increase;
+                    if (typeof v !== "number") return "未登録";
+                    if (v === 0) return "なし";
+                    if (v === 1) return "年1回";
+                    return `年${v}回`;
+                }}
             />
         </TabbedShowLayout.Tab>
 

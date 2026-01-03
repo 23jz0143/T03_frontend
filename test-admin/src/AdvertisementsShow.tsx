@@ -49,12 +49,14 @@ const RequirementListActions = () => {
   const record = useRecordContext();
   if (!record) return null;
 
+  const companyId = record.company_id ?? sessionStorage.getItem(`advCompany:${record.id}`);
+
   return (
     <TopToolbar>
       <CreateButton
         resource="requirements"
         label="募集要項を新規作成"
-        state={{ record: { advertisement_id: record.id } }}
+        state={{ record: { advertisement_id: record.id, company_id: companyId } }}
       />
     </TopToolbar>
   )
