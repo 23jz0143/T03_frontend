@@ -1,8 +1,6 @@
-import { Show, TabbedShowLayout, TextField, DateField, NumberField, FunctionField, useShowContext, useRefresh, SingleFieldList, Datagrid, ArrayField, RecordContextProvider, useRecordContext, TopToolbar, EditButton, Button} from "react-admin";
-import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
+import { Show, TabbedShowLayout, TextField, DateField, NumberField, FunctionField, useShowContext, useRefresh, SingleFieldList, Datagrid, ArrayField, RecordContextProvider, useRecordContext, TopToolbar, EditButton, DeleteButton, Button, useRedirect, useNotify} from "react-admin";
 import { useEffect } from "react";
-import Chip from "@mui/material/Chip";
+import { Chip, Box, CircularProgress } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
@@ -65,6 +63,8 @@ const SalaryDatagridSection: React.FC = () => {
 const RequirementShowActions = () => {
     const record = useRecordContext();
     const { id } = useParams();
+    const redirect = useRedirect();
+    const notify = useNotify();
     if (!record || !record.advertisement_id) {
         console.log("no record or no advertisement_id", record);
     }
@@ -79,7 +79,7 @@ const RequirementShowActions = () => {
                 : `/advertisements/${advertisementId}/show`)
             : undefined;
 
-    const canEdit = from !== "pendings";
+    const notPendings = from !== "pendings";
 
     return (
         <TopToolbar sx={{ justifyContent: "space-between" }}>
@@ -93,7 +93,27 @@ const RequirementShowActions = () => {
                     />
                 )}
             </Box>
-            {canEdit ? <EditButton label="募集要項編集" /> : null}
+            <Box>
+                {notPendings ? (
+                    <DeleteButton
+                        label="募集要項削除"
+                        mutationMode="pessimistic"
+                        confirmTitle="募集要項を削除しますか？"
+                        confirmContent="この操作は取り消せません。"
+                        confirmOk="削除"
+                        confirmCancel="キャンセル"
+                        mutationOptions={{
+                            onSuccess: () => {
+                                notify("募集要項を削除しました", { type: "info" });
+                                redirect("show", "advertisements", advertisementId!);
+                            },
+                        }}
+                    />
+                ) : (
+                    null
+                )}
+                {notPendings ? <EditButton label="募集要項編集" /> : null}
+            </Box>
         </TopToolbar>
     )
 }

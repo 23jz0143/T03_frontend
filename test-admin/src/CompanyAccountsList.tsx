@@ -1,9 +1,18 @@
-import { useMediaQuery } from "@mui/material";
-import { List, Datagrid, TextField, SimpleList, EditButton, ShowButton, TopToolbar, CreateButton } from "react-admin";
+import { Box, useMediaQuery } from "@mui/material";
+import { List, Datagrid, TextField, SimpleList, EditButton, ShowButton, TopToolbar, CreateButton, SearchInput, TextInput, FilterForm } from "react-admin";
+
+const postFilters = [
+  <SearchInput source="company_name" placeholder="企業名検索" alwaysOn />,
+];
 
 const ListActions = () => (
-  <TopToolbar>
-    <CreateButton label="アカウント新規作成" />
+  <TopToolbar sx={{ width: "100%", display: "flex", alignItems: "center" }}>
+    <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
+      <FilterForm filters={postFilters} />
+    </Box>
+    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <CreateButton label="アカウント新規作成" />
+    </Box>
   </TopToolbar>
 );
 

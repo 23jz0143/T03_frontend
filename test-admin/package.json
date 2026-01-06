@@ -14,6 +14,8 @@
     "cors": "^2.8.5",
     "ra-data-json-server": "^5.11.4",
     "ra-data-simple-rest": "^5.11.4",
+    "ra-i18n-polyglot": "^5.13.4",
+    "ra-language-japanese": "^0.1.1",
     "react": "^18.2.0",
     "react-admin": "^5.12.0",
     "react-dom": "^18.2.0",

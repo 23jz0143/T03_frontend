@@ -1,4 +1,6 @@
 import { Admin, Resource } from "react-admin";
+import polyglotI18nProvider from "ra-i18n-polyglot";
+import japaneseMessages from "ra-language-japanese";
 import type { DataProvider, RaRecord } from "react-admin";
 import jsonServerProvider from "ra-data-json-server";
 import { CompanyAccountsList } from "./CompanyAccountsList";
@@ -22,6 +24,19 @@ import { CompanyEdit } from "./CompanyEdit";
 const listBaseUrl = "/api/admin/companies";
 
 const baseProvider = jsonServerProvider(listBaseUrl);
+
+const messages = {
+  ...japaneseMessages,
+  ra: {
+    ...(japaneseMessages as any).ra,
+    action: {
+      ...((japaneseMessages as any).ra.action || {}),
+      confirm: "確認",
+    },
+  },
+};
+
+const customI18nProvider = polyglotI18nProvider(() => messages, "ja");
 
 const logDP = (...args: any[]) => console.debug("[DP]", ...args);
 
@@ -60,14 +75,29 @@ const customDataProvider: DataProvider = {
     const page = params.pagination?.page ?? 1;
 
     if (resource === "accounts") {
-      url = `${listBaseUrl}/accounts?per_page=${per_page}&page=${page}`;
+      const searchParams = new URLSearchParams();
+      searchParams.set("per_page", String(per_page));
+      searchParams.set("page", String(page));
+
+      const filter = (params?.filter ?? {}) as any;
+      if(filter.company_name) searchParams.set("name", String(filter.company_name));
+      console.log(searchParams.toString());
+
+      url = `${listBaseUrl}/accounts?${searchParams.toString()}`;
     }
 
     // --- advertisements の取得処理 (既存) ---
     else if (resource === "advertisements") {
       console.log("getList advertisements params:", params);
-      const year = (params?.filter as any)?.year ?? new Date().getFullYear() + 2;
-      url = `/api/admin/advertisements?year=${year}&per_page=${per_page}&page=${page}`;
+      const filter = (params?.filter ?? {}) as any;
+      const year = filter.year ?? new Date().getFullYear() + 2;
+      const searchParams = new URLSearchParams();
+      searchParams.set("per_page", String(per_page));
+      searchParams.set("page", String(page));
+      searchParams.set("year", String(year));
+      if(filter.company_name) searchParams.set("name", String(filter.company_name));
+
+      url = `/api/admin/advertisements?${searchParams.toString()}`;
     } 
     
     // --- pendings の取得処理 (既存) ---
@@ -781,9 +811,30 @@ const customDataProvider: DataProvider = {
     }
   },
 
-  delete: async (_, { id }) => {
-    const url = `${listBaseUrl}/${id}/accounts`;
-    console.log("DELETE Request URL:", url);
+  delete: async (resource, { id, previousData }) => {
+    let url: string;
+    
+    if(resource === "accounts") {
+      url = `${listBaseUrl}/${id}/accounts`;
+    } else if(resource === "advertisements") {
+      const companyId = (previousData as any).company_id ?? sessionStorage.getItem(`advCompany:${id}`);
+      
+      if(!companyId) {
+        throw new Error("company_id が不明です。求人票一覧からレコードを開いてください。");
+      }
+      url = `/api/companies/${companyId}/advertisements/${id}`;
+    } else if(resource === "requirements") {
+      const advId = (previousData as any).advertisement_id ?? sessionStorage.getItem(`reqAdv:${id}`);
+      const companyId = (previousData as any).company_id ?? sessionStorage.getItem(`reqCompany:${id}`) ?? (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
+
+      if(!advId || !companyId) {
+        throw new Error("参照情報が不足しています。求人票から募集要項を開いてください。");
+      }
+      url = `/api/companies/${companyId}/advertisements/${advId}/requirements/${id}`;
+    } else {
+      throw new Error(`リソース ${resource} の削除はサポートされていません。`);
+    }
+    console.log("DELETE URL:", url);
 
     try {
       const response = await fetch(url, {
@@ -848,6 +899,7 @@ const App = () => (
     dataProvider={customDataProvider}
     loginPage={LoginPage}
     authProvider={authProvider}
+    i18nProvider={customI18nProvider}
   >
     <Resource
       name="accounts"
