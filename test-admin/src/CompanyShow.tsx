@@ -12,6 +12,11 @@ import {
     EditButton,
     Button,
     useRecordContext,
+    TabbedShowLayout,
+    ReferenceManyField,
+    Datagrid,
+    DateField,
+    ShowButton,
 } from "react-admin";
 
 import { Link } from "react-router-dom";
@@ -44,7 +49,8 @@ const ProductShowActions = () => {
 export const CompanyShow = () => {
     return (
         <Show resource="company" actions={<ProductShowActions />} title="会社情報">
-            <SimpleShowLayout>
+            <TabbedShowLayout>
+                <TabbedShowLayout.Tab label="会社情報">
                 <NumberField source="id" label="ID"/>
                 <TextField source="company_name" label="会社名"/>
                 <TextField source="company_name_furigana" label="会社名(ふりがな)"/>
@@ -75,7 +81,26 @@ export const CompanyShow = () => {
                 <TextField source="representative_name" label="採用担当者"/>
                 <NumberField source="sales" label="売上" options={{ style: 'currency', currency: 'JPY' }}/>
                 <RichTextField source="service_achievement" label="主な事業実績"/>
-            </SimpleShowLayout>
+                </TabbedShowLayout.Tab>
+                <TabbedShowLayout.Tab label="求人票一覧">
+                <ReferenceManyField
+                        label="求人票"
+                        reference="advertisements"
+                        target="company_id"
+                    >
+                        <Datagrid bulkActionButtons={false}>
+                            <TextField source="id" label="求人票ID" />
+                            <FunctionField
+                                source="year"
+                                label="対象年（卒）"
+                                render={(record) => record.year + " 年"}
+                            />
+                            <TextField source="pending" label="公開状態" />
+                            <DateField source="updated_at" label="更新日" />
+                        </Datagrid>
+                    </ReferenceManyField>
+                </TabbedShowLayout.Tab>
+            </TabbedShowLayout>
         </Show>
     );
 };

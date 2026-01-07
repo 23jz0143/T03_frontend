@@ -485,6 +485,40 @@ const customDataProvider: DataProvider = {
   },
 
   getManyReference: async (resource, params) => {
+    if (resource === "advertisements") {
+      const companyId = (params as any).id ?? (params as any).filter?.company_id;
+      if(!companyId) throw new Error("company_id が指定されていません");
+
+      const url = `/api/companies/${companyId}/advertisements`;
+      logDP("GET", url);
+
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch advertisements: ${response.status} ${response.statusText}`);
+      }
+
+      const json = await response.json();
+      const rawData = Array.isArray(json) ? json : json?.data ?? [];
+
+      const data = (Array.isArray(rawData) ? rawData : []).map((item: any) => ({
+        ...item,
+        id: String(item?.id),
+      }));
+
+      data.forEach((item: any) => {
+        if (item?.id != null) {
+          sessionStorage.setItem(`advCompany:${item.id}`, String(companyId));
+        }
+      });
+
+      const total =
+        typeof (json as any)?.total === "number"
+          ? (json as any).total
+          : data.length;
+
+      return { data, total };
+    }
+
     if (resource === "requirements") {
       const advertisementId =
         (params as any).id ??
