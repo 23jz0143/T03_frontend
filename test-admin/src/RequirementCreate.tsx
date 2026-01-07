@@ -16,6 +16,7 @@ import {
     ShowButton,
 } from "react-admin";
 import { Checkbox, FormControlLabel, FormGroup, Typography, Grid, FormControl, FormLabel, FormHelperText } from '@mui/material';
+import { useLocation } from "react-router-dom";
 
 const validateRequired = required('必須項目です');
 
@@ -33,13 +34,13 @@ const GroupedPrefectureInput = ({source, choices = [], isLoading, label, helperT
     } = useInput({source, validate});
 
     if(isLoading) return null;
-    const selectedNames = Array.isArray(field.value) ? field.value : [];
+    const selectedIds = field.value || [];
 
-    const handleToggle = (name) => {
-        if(selectedNames.includes(name)) {
-            field.onChange(selectedNames.filter(n => n !== name));
+    const handleToggle = (id) => {
+        if(selectedIds.includes(id)) {
+            field.onChange(selectedIds.filter(itemId => itemId !== id));
         } else {
-            field.onChange([...selectedNames, name]);
+            field.onChange([...selectedIds, id]);
         }
     };
 
@@ -81,9 +82,9 @@ const GroupedPrefectureInput = ({source, choices = [], isLoading, label, helperT
                                         <FormControlLabel
                                             control={
                                                 <Checkbox
-                                                    checked={selectedNames.includes(pref.prefecture)}
-                                                    onChange={() => handleToggle(pref.prefecture)}
-                                                    color={hasError ? "error" : "primary"}
+                                                    checked={selectedIds.includes(pref.id)}
+                                                    onChange={() => handleToggle(pref.id)}
+                                                    color="primary"
                                                     size="small"
                                                 />
                                             }
@@ -105,6 +106,16 @@ const GroupedPrefectureInput = ({source, choices = [], isLoading, label, helperT
 }
 
 export const RequirementCreate = () => {
+    const location = useLocation();
+    const stateRecord = (location.state as any)?.record ?? {};
+    const advertisement_id = stateRecord?.advertisement_id ?? stateRecord?.advertisementId;
+    const company_id =
+        stateRecord?.company_id ??
+        stateRecord?.companyId ??
+        (advertisement_id != null
+            ? sessionStorage.getItem(`advCompany:${advertisement_id}`)
+            : undefined);
+
     const { data: prefecturesData, isLoading: isLoadingPrefectures } = useGetList(
             'prefectures', 
             { 
@@ -113,7 +124,16 @@ export const RequirementCreate = () => {
             }
         );
     return (
-        <Create title="募集要項編集" actions={<CreateActions />}>
+        <Create
+            title="募集要項編集"
+            actions={<CreateActions />}
+            transform={(data: any) => ({
+                ...data,
+                company_id: data?.company_id ?? company_id,
+                advertisement_id: data?.advertisement_id ?? advertisement_id,
+            })}
+            redirect="show"
+        >
             <SimpleForm>
                 <ReferenceInput source="job_category_id" reference="job_categories" label="職種">
                     <RadioButtonGroupInput optionText="job_category_name" label="職種" validate={validateRequired} helperText="一つ選択してください"/>
@@ -126,7 +146,7 @@ export const RequirementCreate = () => {
                     { id: '業務委託', name: '業務委託' },
                 ]} validate={validateRequired}  helperText="一つ選択してください"/>
                 <GroupedPrefectureInput
-                    source="prefectures"
+                    source="prefecture_id"
                     choices={prefecturesData}
                     isLoading={isLoadingPrefectures}
                     validate={validateRequired}

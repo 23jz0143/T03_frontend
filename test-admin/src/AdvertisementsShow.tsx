@@ -15,10 +15,12 @@ import {
   Button,
   EditButton,
   CreateButton,
+  DeleteButton,
   useRecordContext,
 } from "react-admin";
 import { Chip, Box, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Delete } from "@mui/icons-material";
 
 // 親（求人票）レコードから company_id, id を取得して列を組み立て
 const RequirementColumns = () => {
@@ -49,12 +51,14 @@ const RequirementListActions = () => {
   const record = useRecordContext();
   if (!record) return null;
 
+  const companyId = record.company_id ?? sessionStorage.getItem(`advCompany:${record.id}`);
+
   return (
     <TopToolbar>
       <CreateButton
         resource="requirements"
         label="募集要項を新規作成"
-        state={{ record: { advertisement_id: record.id } }}
+        state={{ record: { advertisement_id: record.id, company_id: companyId } }}
       />
     </TopToolbar>
   )
@@ -64,12 +68,22 @@ const AdvertisementsShowActions = () => {
   const redirect = useRedirect();
   return (
     <TopToolbar sx={{ justifyContent: "space-between" }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        label="一覧へ戻る"
-        onClick={() => redirect("list", "advertisements")}
-      />
-      <EditButton label="求人票編集" />
+      <Box>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          label="一覧へ戻る"
+          onClick={() => redirect("list", "advertisements")}
+        />
+      </Box>
+      <Box>
+        <DeleteButton
+          label="求人票削除"
+          mutationMode="pessimistic"
+          confirmTitle="この求人票を削除しますか？"
+          confirmContent="求人票を削除すると、関連する募集要項もすべて削除されます。"
+          />
+        <EditButton label="求人票編集" />
+      </Box>
     </TopToolbar>
   );
 };

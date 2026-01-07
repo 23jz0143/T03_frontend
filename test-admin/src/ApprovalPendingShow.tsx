@@ -1,11 +1,9 @@
 import { Show, useGetOne, TextField, ArrayField, 
   SingleFieldList, DateField, UrlField, useRecordContext,
-  useNotify, FunctionField, useRedirect,TopToolbar, Button,
+  useNotify, FunctionField, useRedirect,TopToolbar, Confirm,
   TabbedShowLayout, ReferenceManyField, Datagrid, NumberField
 } from "react-admin";
-// import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
-import Box from "@mui/material/Box";
+import { Chip, Box, Button } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -39,6 +37,7 @@ const ApproveButton = () => {
   const record = useRecordContext<any>();
   const notify = useNotify();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   if (!record?.id) return null;
@@ -69,11 +68,75 @@ const ApproveButton = () => {
   };
 
   return (
-    <Button variant="contained" color="primary" onClick={handleApprove} disabled={loading}>
-      {loading ? "処理中..." : "公開許可"}
-    </Button>
+    <>
+      <Button variant="contained" color="primary" onClick={() => setOpen(true)} disabled={loading}>
+        {loading ? "処理中..." : "公開許可"}
+      </Button>
+      <Confirm
+        isOpen={open}
+        title="公開を許可しますか？"
+        content="この操作は取り消せません。"
+        onConfirm={() => {
+          setOpen(false);
+          handleApprove();
+        }}
+        onClose={() => setOpen(false)}
+      />
+    </>
   );
 };
+
+const UnapporoveButton = () => {
+  const record = useRecordContext<any>();
+  const notify = useNotify();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  if (!record?.id) return null;
+
+  const handleUnapprove = async () => {
+    try {
+      setLoading(true);
+      const resp = await fetch(`/api/admin/advertisements/${record.id}/rejection`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+      if (!resp.ok) {
+        const msg = await resp.text();
+        notify(`未許可に失敗しました (${resp.status}): ${msg || "エラー"}`, { type: "warning" });
+        return;
+      }
+      notify("未許可にしました", { type: "info" });
+      // 履歴を置き換えて戻れないようにする
+      navigate("/pendings", { replace: true });
+    } catch (e: any) {
+      notify(`未許可の呼び出しに失敗しました: ${e?.message ?? e}`, { type: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <>
+      <Button variant="contained" color="error" onClick={() => setOpen(true)} disabled={loading} sx={{ justifyContent: "center" }}>
+        {loading ? "処理中..." : "未許可"}
+      </Button>
+      <Confirm
+        isOpen={open}
+        title="未許可にしますか？"
+        content="この操作は取り消せません。"
+        onConfirm={() => {
+          setOpen(false);
+          handleUnapprove();
+        }}
+        onClose={() => setOpen(false)}
+      />
+    </>
+  );
+}
 
 // 戻ってきた場合に最新を必ず再取得し、存在しなければ一覧へ
 const PendingGuard = () => {
@@ -102,7 +165,7 @@ const PendingGuard = () => {
   }, [refetch]);
 
   useEffect(() => {
-    if (!isLoading && (error || !data)) {
+    if (!isLoading && (error || !data || (data as any)?.pending !== false)) {
       navigate("/pendings", { replace: true });
     }
   }, [isLoading, error, data, navigate]);
@@ -114,7 +177,7 @@ const AppravalPendingActions = () => {
   const redirect = useRedirect();
   return (
     <TopToolbar sx={{ justifyContent: "space-between" }}>
-      <Button startIcon = {<ArrowBackIcon />} label="一覧へ戻る" onClick={() => redirect("list", "pendings")} />
+      <Button startIcon = {<ArrowBackIcon />} label="公開許可待ちへ戻る" onClick={() => redirect("list", "pendings")} sx={{ justifyContent: "center" }} />
     </TopToolbar>
   );
 };
@@ -215,7 +278,8 @@ export const ApprovalPendingShow = () => {
         <DateField source="updated_at" label="更新日" />
       </TabbedShowLayout.Tab>
       </TabbedShowLayout>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 2, pr: 2 }}>
+        <UnapporoveButton />
         <ApproveButton />
       </Box>
     </Show>
