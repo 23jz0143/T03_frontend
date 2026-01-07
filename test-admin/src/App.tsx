@@ -33,6 +33,16 @@ const messages = {
       ...((japaneseMessages as any).ra.action || {}),
       confirm: "確認",
     },
+    configurable: {
+      ...((japaneseMessages as any).ra?.configurable || {}),
+      customize: "カスタマイズ",
+    },
+    // 追加: sort の不足キーを補完
+    sort: {
+      ...((japaneseMessages as any).ra?.sort || {}),
+      ASC: "昇順",
+      DESC: "降順",
+    },
   },
 };
 
@@ -41,7 +51,7 @@ const customI18nProvider = polyglotI18nProvider(() => messages, "ja");
 const logDP = (...args: any[]) => console.debug("[DP]", ...args);
 
 const toNumber = (val: any): number => {
-  if(val === null || val === undefined || val === "") return 0;
+  if (val === null || val === undefined || val === "") return 0;
   const number = Number(val);
   return isNaN(number) ? 0 : number;
 };
@@ -80,7 +90,8 @@ const customDataProvider: DataProvider = {
       searchParams.set("page", String(page));
 
       const filter = (params?.filter ?? {}) as any;
-      if(filter.company_name) searchParams.set("name", String(filter.company_name));
+      if (filter.company_name)
+        searchParams.set("name", String(filter.company_name));
       console.log(searchParams.toString());
 
       url = `${listBaseUrl}/accounts?${searchParams.toString()}`;
@@ -95,42 +106,51 @@ const customDataProvider: DataProvider = {
       searchParams.set("per_page", String(per_page));
       searchParams.set("page", String(page));
       searchParams.set("year", String(year));
-      if(filter.company_name) searchParams.set("name", String(filter.company_name));
+      if (filter.company_name)
+        searchParams.set("name", String(filter.company_name));
 
       url = `/api/admin/advertisements?${searchParams.toString()}`;
-    } 
-    
+    }
+
     // --- pendings の取得処理 (既存) ---
     else if (resource === "pendings") {
       url = `/api/admin/advertisements/pendings?per_page=${per_page}&page=${page}`;
-    }
-
-    else {
+    } else {
       url = `/api/list/${resource}`;
     }
 
-    
     const response = await fetch(url, {
       method: "GET",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const json = await response.json();
     const rawData = Array.isArray(json) ? json : json.data ?? json;
-    const rawTotal = 
+    const rawTotal =
       (Array.isArray(json) ? null : json.total) ??
       (Array.isArray(rawData) ? rawData.length : 1);
 
-    const data = (Array.isArray(rawData) ? rawData : [rawData]).map((item: any) => ({
-      ...item,
-      id: String(item?.id),
-    }));
+    const data = (Array.isArray(rawData) ? rawData : [rawData]).map(
+      (item: any) => ({
+        ...item,
+        id: String(item?.id),
+      })
+    );
 
     // IDのマッピング保存処理 (既存)
-    if ((resource === "advertisements" || resource === "pendings") && Array.isArray(data)) {
+    if (
+      (resource === "advertisements" || resource === "pendings") &&
+      Array.isArray(data)
+    ) {
       data.forEach((item: any) => {
         if (item?.id != null && item?.company_id != null) {
-          sessionStorage.setItem(`advCompany:${item.id}`, String(item.company_id));
+          sessionStorage.setItem(
+            `advCompany:${item.id}`,
+            String(item.company_id)
+          );
         }
       });
     }
@@ -158,7 +178,9 @@ const customDataProvider: DataProvider = {
 
       const companyId = sessionStorage.getItem(`advCompany:${id}`);
       if (!companyId) {
-        throw new Error("company_id が不明です。公開許可待ち一覧からレコードを開いてください。");
+        throw new Error(
+          "company_id が不明です。公開許可待ち一覧からレコードを開いてください。"
+        );
       }
       sessionStorage.setItem(`advFrom:${id}`, "pendings");
 
@@ -291,7 +313,9 @@ const customDataProvider: DataProvider = {
         // job_category (職種)
         if (!data.job_category_id) {
           const searchName =
-            data.job_categories_name || data.job_category_name || data.job_category;
+            data.job_categories_name ||
+            data.job_category_name ||
+            data.job_category;
           if (searchName) {
             const mappedId = findIdByName(jobCats, searchName, [
               "name",
@@ -303,12 +327,19 @@ const customDataProvider: DataProvider = {
         }
 
         // submission_objects (提出物)
-        if (!data.submission_objects_id || data.submission_objects_id.length === 0) {
-          const subNames = data.submission_objects || data.submission_object_names;
+        if (
+          !data.submission_objects_id ||
+          data.submission_objects_id.length === 0
+        ) {
+          const subNames =
+            data.submission_objects || data.submission_object_names;
           data.submission_objects_id = Array.isArray(subNames)
             ? subNames
                 .map((name: any) =>
-                  findIdByName(subObjs, name, ["name", "submission_object_name"])
+                  findIdByName(subObjs, name, [
+                    "name",
+                    "submission_object_name",
+                  ])
                 )
                 .filter((id: any) => id !== null)
             : [];
@@ -359,7 +390,10 @@ const customDataProvider: DataProvider = {
       const companyId = (params as any).id;
       if (!data.id) data.id = companyId; // react-admin用のid保証
 
-      if (Array.isArray(data.industry_names) && data.industry_names.length > 0) {
+      if (
+        Array.isArray(data.industry_names) &&
+        data.industry_names.length > 0
+      ) {
         try {
           const industriesRes = await fetch("/api/list/industries");
           if (industriesRes.ok) {
@@ -391,58 +425,63 @@ const customDataProvider: DataProvider = {
 
   getMany: async (resource, params) => {
     const { ids } = params;
-      logDP(`getMany called for ${resource}`, params);
+    logDP(`getMany called for ${resource}`, params);
 
-      const selectionParamMap: { [key: string]: string } = {
-        industries: 'industry_ids',
-        tags: 'tag_ids',
-        job_categories: 'job_category_ids',
-        prefectures: 'prefecture_ids',
-        welfare_benefits: 'welfare_benefit_ids',
-        submission_objects: 'submission_objects_ids',
-      };
+    const selectionParamMap: { [key: string]: string } = {
+      industries: "industry_ids",
+      tags: "tag_ids",
+      job_categories: "job_category_ids",
+      prefectures: "prefecture_ids",
+      welfare_benefits: "welfare_benefit_ids",
+      submission_objects: "submission_objects_ids",
+    };
 
-      const paramName = selectionParamMap[resource];
-      let url = `/api/list/${resource}`;
+    const paramName = selectionParamMap[resource];
+    let url = `/api/list/${resource}`;
 
-      if(paramName) {
-        const queryString = (ids ?? []).map((id: any) => `${paramName}=${encodeURIComponent(String(id))}`).join("&");
+    if (paramName) {
+      const queryString = (ids ?? [])
+        .map((id: any) => `${paramName}=${encodeURIComponent(String(id))}`)
+        .join("&");
 
-        url = `/api/list/${resource}/selection?${queryString}`;
-        console.log(`getMany fetching ${resource} with URL:`, url);
-        
-        const response = await fetch(url, {
-          headers: {'Content-Type': 'application/json' },
-        });
-        if (!response.ok) {
-          throw new Error(`getMany error for ${resource}, status: ${response.status}`);
-        }
-        const text = await response.text();
-        const json = text ? JSON.parse(text) : [];
-
-        const data = Array.isArray(json)
-          ? json.map((item: any) => ({ ...item, id: String(item.id) }))
-          : [];
-
-        return { data };
-      }
+      url = `/api/list/${resource}/selection?${queryString}`;
+      console.log(`getMany fetching ${resource} with URL:`, url);
 
       const response = await fetch(url, {
-        headers: {'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(
+          `getMany error for ${resource}, status: ${response.status}`
+        );
       }
+      const text = await response.text();
+      const json = text ? JSON.parse(text) : [];
 
-      const json = await response.json();
-
-      const stringIds = ids.map(String);
       const data = Array.isArray(json)
-        ? json.filter((item: any) => stringIds.includes(String(item.id))) : [];
+        ? json.map((item: any) => ({ ...item, id: String(item.id) }))
+        : [];
 
-      logDP(`getMany result for ${resource}`, data);
-      
       return { data };
+    }
+
+    const response = await fetch(url, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const json = await response.json();
+
+    const stringIds = ids.map(String);
+    const data = Array.isArray(json)
+      ? json.filter((item: any) => stringIds.includes(String(item.id)))
+      : [];
+
+    logDP(`getMany result for ${resource}`, data);
+
+    return { data };
   },
 
   getManyReference: async (resource, params) => {
@@ -525,7 +564,7 @@ const customDataProvider: DataProvider = {
           : [],
       };
       console.log("Creating advertisement with data:", dataToSubmit);
-    } else if(resource === "requirements") {
+    } else if (resource === "requirements") {
       const companyId = params.data.company_id;
       const advId = params.data.advertisement_id;
 
@@ -650,7 +689,7 @@ const customDataProvider: DataProvider = {
         }
       }
 
-      if(resource === "requirements") {
+      if (resource === "requirements") {
         const createdId = responseData?.id;
         const advId = params.data.advertisement_id;
         const companyId = params.data.company_id;
@@ -671,12 +710,12 @@ const customDataProvider: DataProvider = {
   update: async (resource, { id, data }) => {
     let url;
     let dataToSubmit;
-    if(resource === "accounts") {
+    if (resource === "accounts") {
       dataToSubmit = {
         ...data,
-      }
+      };
       url = `${listBaseUrl}/${id}/accounts`;
-    } else if(resource === "company") {
+    } else if (resource === "company") {
       if (!id) throw new Error("id is required");
       url = `/api/companies/${id}`;
       console.log(data);
@@ -692,15 +731,21 @@ const customDataProvider: DataProvider = {
         updated_at: new Date().toISOString(),
       };
       delete dataToSubmit.industry_ids;
-    } else if(resource === "advertisements") {
+    } else if (resource === "advertisements") {
       url = `/api/companies/${data.company_id}/advertisements/${id}`;
       dataToSubmit = {
         ...data,
-        tag_ids: Array.isArray(data.tag_ids) ? data.tag_ids.map(Number) : (data.tag_ids || []),
-      }
-    } else if(resource === "requirements") {
-      const advId = data.advertisement_id ?? sessionStorage.getItem(`reqAdv:${id}`);
-      const companyId = data.company_id ?? sessionStorage.getItem(`reqCompany:${id}`) ?? (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
+        tag_ids: Array.isArray(data.tag_ids)
+          ? data.tag_ids.map(Number)
+          : data.tag_ids || [],
+      };
+    } else if (resource === "requirements") {
+      const advId =
+        data.advertisement_id ?? sessionStorage.getItem(`reqAdv:${id}`);
+      const companyId =
+        data.company_id ??
+        sessionStorage.getItem(`reqCompany:${id}`) ??
+        (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
 
       if (!advId) throw new Error("求人票IDが不明です");
 
@@ -792,19 +837,27 @@ const customDataProvider: DataProvider = {
         },
         body: JSON.stringify(dataToSubmit),
       });
-  
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
 
       const responseText = await response.text();
 
-      if(!responseText) {
+      if (!responseText) {
         logDP("Update response body for ${resource} is empty");
         return { data: { ...data, id: id, _full: true } };
       }
-  
+
       const responseData = JSON.parse(responseText);
 
-      return { data: { ...responseData, ...data, id: responseData.id ?? id, _full: true } };
+      return {
+        data: {
+          ...responseData,
+          ...data,
+          id: responseData.id ?? id,
+          _full: true,
+        },
+      };
     } catch (error) {
       console.error("UPDATE Request error:", error);
       throw error;
@@ -813,22 +866,33 @@ const customDataProvider: DataProvider = {
 
   delete: async (resource, { id, previousData }) => {
     let url: string;
-    
-    if(resource === "accounts") {
+
+    if (resource === "accounts") {
       url = `${listBaseUrl}/${id}/accounts`;
-    } else if(resource === "advertisements") {
-      const companyId = (previousData as any).company_id ?? sessionStorage.getItem(`advCompany:${id}`);
-      
-      if(!companyId) {
-        throw new Error("company_id が不明です。求人票一覧からレコードを開いてください。");
+    } else if (resource === "advertisements") {
+      const companyId =
+        (previousData as any).company_id ??
+        sessionStorage.getItem(`advCompany:${id}`);
+
+      if (!companyId) {
+        throw new Error(
+          "company_id が不明です。求人票一覧からレコードを開いてください。"
+        );
       }
       url = `/api/companies/${companyId}/advertisements/${id}`;
-    } else if(resource === "requirements") {
-      const advId = (previousData as any).advertisement_id ?? sessionStorage.getItem(`reqAdv:${id}`);
-      const companyId = (previousData as any).company_id ?? sessionStorage.getItem(`reqCompany:${id}`) ?? (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
+    } else if (resource === "requirements") {
+      const advId =
+        (previousData as any).advertisement_id ??
+        sessionStorage.getItem(`reqAdv:${id}`);
+      const companyId =
+        (previousData as any).company_id ??
+        sessionStorage.getItem(`reqCompany:${id}`) ??
+        (advId ? sessionStorage.getItem(`advCompany:${advId}`) : null);
 
-      if(!advId || !companyId) {
-        throw new Error("参照情報が不足しています。求人票から募集要項を開いてください。");
+      if (!advId || !companyId) {
+        throw new Error(
+          "参照情報が不足しています。求人票から募集要項を開いてください。"
+        );
       }
       url = `/api/companies/${companyId}/advertisements/${advId}/requirements/${id}`;
     } else {
@@ -930,14 +994,15 @@ const App = () => (
       edit={AdvertisementEdit}
       options={{ label: "求人票一覧" }}
     />
-    <Resource name="requirements"
+    <Resource
+      name="requirements"
       show={RequirementShow}
       edit={RequirementEdit}
       create={RequirementCreate}
     />
     <Resource name="tags" />
     <Resource name="industries" />
-    <Resource name="job_categories" />  
+    <Resource name="job_categories" />
     <Resource name="prefectures" />
     <Resource name="welfare_benefits" />
     <Resource name="submission_objects" />
