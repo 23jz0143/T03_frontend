@@ -13,18 +13,38 @@ import {
     useInput,
     useGetList,
     TopToolbar,
-    ShowButton,
+    Button,
+    useRedirect,
 } from "react-admin";
 import { Checkbox, FormControlLabel, FormGroup, Typography, Grid, FormControl, FormLabel, FormHelperText } from '@mui/material';
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 
 const validateRequired = required('必須項目です');
 
-const CreateActions = () => (
-    <TopToolbar sx={{ justifyContent: "space-between" }}>
-        <ShowButton label="キャンセル " icon={false} />
-    </TopToolbar>
-);
+const CreateActions = () => {
+    const location = useLocation();
+    const redirect = useRedirect();
+
+    const advertisementId =
+        (location.state as any)?.record?.advertisement_id ??
+        (location.state as any)?.record?.advertisementId ??
+        (location.state as any)?.advertisementId;
+
+    return (
+        <TopToolbar sx={{ justifyContent: "space-between" }}>
+            <Button
+                label="キャンセル"
+                onClick={() => {
+                    if (advertisementId != null) {
+                        redirect("show", "advertisements", advertisementId);
+                    } else {
+                        redirect("list", "advertisements");
+                    }
+                }}
+            />
+        </TopToolbar>
+    );
+};
 
 const GroupedPrefectureInput = ({source, choices = [], isLoading, label, helperText, validate}) => {
     const {
