@@ -8,27 +8,33 @@ import {
   CheckboxGroupInput,
   TopToolbar,
   Button,
+  useRedirect,
 } from "react-admin";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 const validateRequired = required("必須項目です");
 
 const CreateActions = () => {
   const location = useLocation();
-  const fromCompanyId = (location.state as any)?.fromCompanyId;
+  const redirect = useRedirect();
+
+  const advertisementId =
+    (location.state as any)?.advertisementId ??
+    (location.state as any)?.record?.advertisement_id ??
+    (location.state as any)?.record?.advertisementId;
 
   return (
     <TopToolbar sx={{ justifyContent: "space-between" }}>
-        {fromCompanyId ? (
-        <Button
-          label="キャンセル"
-          component={Link}
-          to={`/company/${fromCompanyId}/show`}
-        />
-      ) : (
-        // フォールバック（渡ってこない場合）
-        <Button label="キャンセル" component={Link} to="/advertisements" />
-      )}
+      <Button
+        label="キャンセル"
+        onClick={() => {
+          if (advertisementId) {
+            redirect("show", "advertisements", advertisementId);
+          } else {
+            redirect("list", "advertisements");
+          }
+        }}
+      />
     </TopToolbar>
   );
 };
