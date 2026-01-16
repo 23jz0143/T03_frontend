@@ -145,7 +145,7 @@ export const RequirementCreate = () => {
         );
     return (
         <Create
-            title="募集要項編集"
+            title="募集要項作成"
             actions={<CreateActions />}
             transform={(data: any) => ({
                 ...data,

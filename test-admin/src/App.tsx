@@ -1026,7 +1026,7 @@ const App = () => (
       show={AdvertisementsShow}
       create={AdvertisementCreate}
       edit={AdvertisementEdit}
-      options={{ label: "求人票一覧" }}
+      options={{ label: "求人票" }}
     />
     <Resource
       name="requirements"
