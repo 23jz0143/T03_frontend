@@ -20,7 +20,7 @@ import {
 } from "react-admin";
 import { Chip, Box, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { Delete } from "@mui/icons-material";
+import type { Advertisement, Company } from "../../types";
 
 // 親（求人票）レコードから company_id, id を取得して列を組み立て
 const RequirementColumns = () => {
@@ -31,7 +31,7 @@ const RequirementColumns = () => {
       <TextField source="job_categories_name" label="職種" />
       <FunctionField
         label="勤務地"
-        render={(r: any) =>
+        render={(r: Advertisement) =>
           Array.isArray(r?.location) && r.location.length
             ? r.location.join("、")
             : "未登録"
@@ -51,17 +51,20 @@ const RequirementListActions = () => {
   const record = useRecordContext();
   if (!record) return null;
 
-  const companyId = record.company_id ?? sessionStorage.getItem(`advCompany:${record.id}`);
+  const companyId =
+    record.company_id ?? sessionStorage.getItem(`advCompany:${record.id}`);
 
   return (
     <TopToolbar>
       <CreateButton
         resource="requirements"
         label="募集要項を新規作成"
-        state={{ record: { advertisement_id: record.id, company_id: companyId } }}
+        state={{
+          record: { advertisement_id: record.id, company_id: companyId },
+        }}
       />
     </TopToolbar>
-  )
+  );
 };
 
 const AdvertisementsShowActions = () => {
@@ -81,7 +84,7 @@ const AdvertisementsShowActions = () => {
           mutationMode="pessimistic"
           confirmTitle="この求人票を削除しますか？"
           confirmContent="求人票を削除すると、関連する募集要項もすべて削除されます。"
-          />
+        />
         <EditButton label="求人票編集" />
       </Box>
     </TopToolbar>
@@ -89,7 +92,7 @@ const AdvertisementsShowActions = () => {
 };
 
 const EmptyRequirement = () => (
-  <Box sx={{ textAlign: 'center', width: '100%'}}>
+  <Box sx={{ textAlign: "center", width: "100%" }}>
     <Typography variant="h6" color="textSecondary">
       募集要項はまだ登録されていません
     </Typography>
@@ -102,16 +105,18 @@ export const AdvertisementsShow = () => (
       <TabbedShowLayout.Tab label="概要">
         <FunctionField
           label="会社名"
-          render={(r: any) => {
-            const v = r?.company_name ?? r?.company?.name;
-            return v ? v : "未登録";
+          render={(r: Advertisement): React.ReactNode => {
+            const v = r?.company_name ?? (r?.company as Company)?.name;
+            return v ? String(v) : "未登録";
           }}
         />
         <FunctionField
           label="会社名（ふりがな）"
-          render={(r: any) => {
-            const v = r?.company_name_furigana ?? r?.company?.name_furigana;
-            return v ? v : "未登録";
+          render={(r: Advertisement): React.ReactNode => {
+            const v =
+              r?.company_name_furigana ??
+              (r?.company as Company)?.name_furigana;
+            return v ? String(v) : "未登録";
           }}
         />
         <FunctionField
@@ -146,8 +151,36 @@ export const AdvertisementsShow = () => (
         />
         <TextField source="briefing_info" label="説明会情報" />
         <UrlField source="homepage_url" label="ホームページURL" />
-        <FunctionField source="mynavi_url" label="マイナビURL" render={record => record.mynavi_url ? <UrlField source="mynavi_url" label="マイナビURL" target="_blank"/> : "未登録"}/>
-        <FunctionField source="rikunavi_url" label="リクナビURL" render={record => record.rikunavi_url ? <UrlField source="rikunavi_url" label="リクナビURL" target="_blank"/> : "未登録"} />
+        <FunctionField
+          source="mynavi_url"
+          label="マイナビURL"
+          render={(record) =>
+            record.mynavi_url ? (
+              <UrlField
+                source="mynavi_url"
+                label="マイナビURL"
+                target="_blank"
+              />
+            ) : (
+              "未登録"
+            )
+          }
+        />
+        <FunctionField
+          source="rikunavi_url"
+          label="リクナビURL"
+          render={(record) =>
+            record.rikunavi_url ? (
+              <UrlField
+                source="rikunavi_url"
+                label="リクナビURL"
+                target="_blank"
+              />
+            ) : (
+              "未登録"
+            )
+          }
+        />
         <TextField source="job_recruiter_name" label="採用担当者名" />
         <FunctionField
           source="recruiting_count"
@@ -162,7 +195,9 @@ export const AdvertisementsShow = () => (
         <ArrayField source="tags" label="タグ">
           <SingleFieldList linkType={false}>
             <FunctionField
-              render={(tag: any) => <Chip label={String(tag)} size="small" />}
+              render={(tag: unknown) => (
+                <Chip label={String(tag)} size="small" />
+              )}
             />
           </SingleFieldList>
         </ArrayField>

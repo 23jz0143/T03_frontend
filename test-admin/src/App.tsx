@@ -2,8 +2,8 @@ import { Admin, Resource } from "react-admin";
 import { AccountCircle } from "@mui/icons-material";
 
 import { CompanyAccountsList } from "./resources/companies/CompanyAccountsList";
-import { UserEdit } from "./resources/users/UserEdit";
-import { UserCreate } from "./resources/users/UserCreate";
+import { CompanyAccountsEdit } from "./resources/companies/CompanyAccountsEdit";
+import { CompanyAccountsCreate } from "./resources/companies/CompanyAccountsCreate";
 import { ApprovalPendingList } from "./resources/approval-pending/ApprovalPendingList";
 import { ApprovalPendingShow } from "./resources/approval-pending/ApprovalPendingShow";
 import { AdvertisementsList } from "./resources/advertisements/AdvertisementsList";
@@ -31,8 +31,8 @@ const App = () => (
     <Resource
       name="accounts"
       list={CompanyAccountsList}
-      edit={UserEdit}
-      create={UserCreate}
+      edit={CompanyAccountsEdit}
+      create={CompanyAccountsCreate}
       show={CompanyShow}
       icon={AccountCircle}
       options={{ label: "アカウント" }}

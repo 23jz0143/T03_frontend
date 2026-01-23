@@ -1,4 +1,12 @@
-import { DeleteButton, Edit, ListButton, SaveButton, SimpleForm, TextInput, TopToolbar } from "react-admin";
+import {
+  DeleteButton,
+  Edit,
+  ListButton,
+  SaveButton,
+  SimpleForm,
+  TextInput,
+  TopToolbar,
+} from "react-admin";
 
 const UserEditActions = () => (
   <TopToolbar sx={{ justifyContent: "space-between" }}>
@@ -16,14 +24,14 @@ const UserEditToolbar = () => (
       confirmContent="アカウントを削除すると、関連する企業情報もすべて削除されます。"
     />
   </TopToolbar>
-)
+);
 
-export const UserEdit = () => (
+export const CompanyAccountsEdit = () => (
   <Edit actions={<UserEditActions />}>
     <SimpleForm toolbar={<UserEditToolbar />}>
-      <TextInput source="id"  disabled/>
+      <TextInput source="id" disabled />
       <TextInput source="account_name" />
-      <TextInput source="company_name" disabled/>
+      <TextInput source="company_name" disabled />
       <TextInput source="password" />
     </SimpleForm>
   </Edit>

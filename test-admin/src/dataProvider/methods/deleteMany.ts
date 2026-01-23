@@ -2,7 +2,7 @@ import type { DeleteManyParams, DeleteManyResult } from "react-admin";
 import { listBaseUrl } from "../constants";
 
 export const deleteMany = async (
-  resource: string,
+  _resource: string,
   params: DeleteManyParams
 ): Promise<DeleteManyResult> => {
   const { ids } = params;
