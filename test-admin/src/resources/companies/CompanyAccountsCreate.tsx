@@ -1,7 +1,6 @@
-// AccountCreate.tsx
-import { Create, SimpleForm, TextInput, } from "react-admin";
+import { Create, SimpleForm, TextInput } from "react-admin";
 
-export const UserCreate = () => (
+export const CompanyAccountsCreate = () => (
   <Create redirect="list">
     <SimpleForm>
       <TextInput source="account_name" label="アカウント名" />

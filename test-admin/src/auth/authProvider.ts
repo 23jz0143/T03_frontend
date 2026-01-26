@@ -1,7 +1,7 @@
 import type { AuthProvider } from "react-admin";
 
 export const authProvider: AuthProvider = {
-  login: async (params: any) => {
+  login: async (params: { credential?: string }) => {
     if (!params?.credential) throw new Error("Google認証情報がありません");
     // 既にバックエンドで検証済みと仮定し、トークンは sessionStorage に保存済み
     return Promise.resolve();

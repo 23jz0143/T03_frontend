@@ -1,6 +1,5 @@
 import {
   Show,
-  useGetOne,
   TextField,
   ArrayField,
   SingleFieldList,
@@ -17,9 +16,11 @@ import {
   Datagrid,
   NumberField,
 } from "react-admin";
-import { Chip, Box, Button } from "@mui/material";
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Chip, Box, Button as MuiButton } from "@mui/material";
+import type { Advertisement, Company } from "../../types";
+import { Button as RaButton } from "react-admin";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 // 親（求人票）レコードから company_id, id を取得して列を組み立て
@@ -31,7 +32,7 @@ const RequirementColumns = () => {
       <TextField source="job_categories_name" label="職種" />
       <FunctionField
         label="勤務地"
-        render={(r: any) =>
+        render={(r: Advertisement) =>
           Array.isArray(r?.location) && r.location.length
             ? r.location.join("、")
             : "未登録"
@@ -48,7 +49,7 @@ const RequirementColumns = () => {
 };
 
 const ApproveButton = () => {
-  const record = useRecordContext<any>();
+  const record = useRecordContext<Advertisement>();
   const notify = useNotify();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -67,7 +68,7 @@ const ApproveButton = () => {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-        }
+        },
       );
       if (!resp.ok) {
         const msg = await resp.text();
@@ -79,10 +80,13 @@ const ApproveButton = () => {
       notify("公開を許可しました", { type: "info" });
       // 履歴を置き換えて戻れないようにする
       navigate("/pendings", { replace: true });
-    } catch (e: any) {
-      notify(`公開許可の呼び出しに失敗しました: ${e?.message ?? e}`, {
-        type: "error",
-      });
+    } catch (e: unknown) {
+      notify(
+        `公開許可の呼び出しに失敗しました: ${(e as Error)?.message ?? e}`,
+        {
+          type: "error",
+        },
+      );
     } finally {
       setLoading(false);
     }
@@ -90,14 +94,14 @@ const ApproveButton = () => {
 
   return (
     <>
-      <Button
+      <MuiButton
         variant="contained"
         color="primary"
         onClick={() => setOpen(true)}
         disabled={loading}
       >
         {loading ? "処理中..." : "公開許可"}
-      </Button>
+      </MuiButton>
       <Confirm
         isOpen={open}
         title="公開を許可しますか？"
@@ -113,7 +117,7 @@ const ApproveButton = () => {
 };
 
 const UnapporoveButton = () => {
-  const record = useRecordContext<any>();
+  const record = useRecordContext<Advertisement>();
   const notify = useNotify();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -132,7 +136,7 @@ const UnapporoveButton = () => {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-        }
+        },
       );
       if (!resp.ok) {
         const msg = await resp.text();
@@ -144,8 +148,8 @@ const UnapporoveButton = () => {
       notify("未許可にしました", { type: "info" });
       // 履歴を置き換えて戻れないようにする
       navigate("/pendings", { replace: true });
-    } catch (e: any) {
-      notify(`未許可の呼び出しに失敗しました: ${e?.message ?? e}`, {
+    } catch (e: unknown) {
+      notify(`未許可の呼び出しに失敗しました: ${(e as Error)?.message ?? e}`, {
         type: "error",
       });
     } finally {
@@ -154,7 +158,7 @@ const UnapporoveButton = () => {
   };
   return (
     <>
-      <Button
+      <MuiButton
         variant="contained"
         color="error"
         onClick={() => setOpen(true)}
@@ -162,7 +166,7 @@ const UnapporoveButton = () => {
         sx={{ justifyContent: "center" }}
       >
         {loading ? "処理中..." : "未許可"}
-      </Button>
+      </MuiButton>
       <Confirm
         isOpen={open}
         title="未許可にしますか？"
@@ -177,42 +181,11 @@ const UnapporoveButton = () => {
   );
 };
 
-// 戻ってきた場合に最新を必ず再取得し、存在しなければ一覧へ
-const PendingGuard = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { data, error, isLoading, refetch } = useGetOne("pendings", { id }, {
-    staleTime: 0,
-    gcTime: 0,
-    retry: false,
-  } as any);
-
-  // bfcache（戻る復元）時にも再取得させる
-  useEffect(() => {
-    const onPageShow = (e: PageTransitionEvent) => {
-      // bfcache からの復元時は persisted が true
-      if ((e as any).persisted) {
-        refetch();
-      }
-    };
-    window.addEventListener("pageshow", onPageShow);
-    return () => window.removeEventListener("pageshow", onPageShow);
-  }, [refetch]);
-
-  useEffect(() => {
-    if (!isLoading && (error || !data || (data as any)?.pending !== false)) {
-      navigate("/pendings", { replace: true });
-    }
-  }, [isLoading, error, data, navigate]);
-
-  return null;
-};
-
 const AppravalPendingActions = () => {
   const redirect = useRedirect();
   return (
     <TopToolbar sx={{ justifyContent: "space-between" }}>
-      <Button
+      <RaButton
         startIcon={<ArrowBackIcon />}
         label="公開許可待ちへ戻る"
         onClick={() => redirect("list", "pendings")}
@@ -237,23 +210,22 @@ const AppravalPendingActions = () => {
 export const ApprovalPendingShow = () => {
   return (
     <Show title="公開許可待ち詳細" actions={<AppravalPendingActions />}>
-      {/* 戻るで来たときのガード */}
-      <PendingGuard />
-
       <TabbedShowLayout>
         <TabbedShowLayout.Tab label="概要">
           <FunctionField
             label="会社名"
-            render={(r: any) => {
-              const v = r?.company_name ?? r?.company?.name;
-              return v ? v : "未登録";
+            render={(r: Advertisement): React.ReactNode => {
+              const v = r?.company_name ?? (r?.company as Company)?.name;
+              return v ? String(v) : "未登録";
             }}
           />
           <FunctionField
             label="会社名（ふりがな）"
-            render={(r: any) => {
-              const v = r?.company_name_furigana ?? r?.company?.name_furigana;
-              return v ? v : "未登録";
+            render={(r: Advertisement): React.ReactNode => {
+              const v =
+                r?.company_name_furigana ??
+                (r?.company as Company)?.name_furigana;
+              return v ? String(v) : "未登録";
             }}
           />
           <FunctionField
@@ -285,12 +257,12 @@ export const ApprovalPendingShow = () => {
           <UrlField source="homepage_url" label="ホームページURL" />
           <FunctionField
             label="留学生採用"
-            render={(r: any) =>
+            render={(r: Advertisement) =>
               r?.international_student_recruitment === true
                 ? "はい"
                 : r?.international_student_recruitment === false
-                ? "いいえ"
-                : "未登録"
+                  ? "いいえ"
+                  : "未登録"
             }
           />
           <TextField source="job_recruiter_name" label="採用担当者名" />
@@ -307,7 +279,9 @@ export const ApprovalPendingShow = () => {
           <ArrayField source="tags" label="タグ">
             <SingleFieldList linkType={false}>
               <FunctionField
-                render={(tag: any) => <Chip label={String(tag)} size="small" />}
+                render={(tag: unknown) => (
+                  <Chip label={String(tag)} size="small" />
+                )}
               />
             </SingleFieldList>
           </ArrayField>
