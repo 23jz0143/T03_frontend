@@ -8,13 +8,15 @@ import {
   TopToolbar,
 } from "react-admin";
 
+import { ApprovalPendingEmpty } from "./ApprovalPendingEmpty";
+
 const ListActions = () => <TopToolbar></TopToolbar>;
 
 export const ApprovalPendingList = () => {
   const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm"));
 
   return (
-    <List actions={<ListActions />}>
+    <List actions={<ListActions />} empty={<ApprovalPendingEmpty />}>
       {isSmall ? (
         <SimpleList
           primaryText={(record) => record.account_name}

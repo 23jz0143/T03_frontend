@@ -311,7 +311,7 @@ export const RequirementShow = () => {
             <TextField source="note" label="備考" />
           </TabbedShowLayout.Tab>
 
-          <TabbedShowLayout.Tab label="メタ情報">
+          <TabbedShowLayout.Tab label="日付情報">
             <DateField
               source="created_at"
               label="作成日"
