@@ -1,9 +1,9 @@
 import { Admin, Resource } from "react-admin";
 import { AccountCircle } from "@mui/icons-material";
 
-import { CompanyAccountsList } from "./resources/companies/CompanyAccountsList";
-import { CompanyAccountsEdit } from "./resources/companies/CompanyAccountsEdit";
-import { CompanyAccountsCreate } from "./resources/companies/CompanyAccountsCreate";
+import { CompanyAccountsList } from "./resources/companyAccounts/CompanyAccountsList";
+import { CompanyAccountsEdit } from "./resources/companyAccounts/CompanyAccountsEdit";
+import { CompanyAccountsCreate } from "./resources/companyAccounts/CompanyAccountsCreate";
 import { ApprovalPendingList } from "./resources/approval-pending/ApprovalPendingList";
 import { ApprovalPendingShow } from "./resources/approval-pending/ApprovalPendingShow";
 import { AdvertisementsList } from "./resources/advertisements/AdvertisementsList";
@@ -17,7 +17,7 @@ import { LoginPage } from "./auth/LoginPage";
 import { authProvider } from "./auth/authProvider";
 import { CompanyShow } from "./resources/companies/CompanyShow";
 import { CompanyEdit } from "./resources/companies/CompanyEdit";
-
+import { CompanyCreate } from "./resources/companies/CompanyCreate";
 import { customDataProvider } from "./dataProvider";
 import { customI18nProvider } from "./i18n";
 
@@ -41,6 +41,7 @@ const App = () => (
       name="company"
       edit={CompanyEdit}
       show={CompanyShow}
+      create={CompanyCreate}
       options={{ label: "会社情報" }}
     />
     <Resource

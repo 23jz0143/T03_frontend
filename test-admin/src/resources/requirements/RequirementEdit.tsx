@@ -64,13 +64,12 @@ const GroupedPrefectureInput = ({
   } = useInput({ source, validate });
 
   if (isLoading) return null;
-  const selectedNames = Array.isArray(field.value) ? field.value : [];
-
-  const handleToggle = (name: string) => {
-    if (selectedNames.includes(name)) {
-      field.onChange(selectedNames.filter((n) => n !== name));
+  const selectedIds = Array.isArray(field.value) ? field.value.map(Number) : [];
+  const handleToggle = (id: number) => {
+    if (selectedIds.includes(id)) {
+      field.onChange(selectedIds.filter((n: number) => n !== id));
     } else {
-      field.onChange([...selectedNames, name]);
+      field.onChange([...selectedIds, id]);
     }
   };
 
@@ -192,8 +191,8 @@ const GroupedPrefectureInput = ({
                       <FormControlLabel
                         control={
                           <Checkbox
-                            checked={selectedNames.includes(pref.prefecture)}
-                            onChange={() => handleToggle(pref.prefecture)}
+                            checked={selectedIds.includes(Number(pref.id))}
+                            onChange={() => handleToggle(Number(pref.id))}
                             color={hasError ? "error" : "primary"}
                             size="small"
                           />
@@ -248,7 +247,7 @@ export const RequirementEdit = () => {
           helperText="一つ選択してください"
         />
         <GroupedPrefectureInput
-          source="prefectures"
+          source="prefecture_id"
           choices={prefecturesData}
           isLoading={isLoadingPrefectures}
           validate={validateRequired}
