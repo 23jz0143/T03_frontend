@@ -57,7 +57,7 @@ export const CompanyCreate = () => {
 
       sessionStorage.removeItem("register_account_id");
       notify("会社情報が作成されました", { type: "success" });
-      redirect("/accounts/list");
+      redirect("/accounts");
     } catch {
       notify("会社情報の作成に失敗しました", { type: "error" });
     }
