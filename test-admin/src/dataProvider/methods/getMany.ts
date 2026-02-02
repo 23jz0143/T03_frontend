@@ -14,7 +14,7 @@ export const getMany = async (
     job_categories: "job_category_ids",
     prefectures: "prefecture_ids",
     welfare_benefits: "welfare_benefit_ids",
-    submission_objects: "submission_objects_ids",
+    submission_objects: "submission_object_ids",
   };
 
   const paramName = selectionParamMap[resource];

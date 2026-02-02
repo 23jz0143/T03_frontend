@@ -95,12 +95,28 @@ export const update = async (
       : [];
     dataToSubmit = {
       ...requirementData,
-      various_allowances: processedAllowances,
+      job_category_id: toNumber(data.job_category_id),
+        submission_objects_id: Array.isArray(data.submission_objects_id)
+          ? data.submission_objects_id.map(Number)
+          : [],
+
+        prefecture_id: Array.isArray(data.prefecture_id)
+          ? data.prefecture_id.map(Number)
+          : data.prefecture_id
+          ? [toNumber(data.prefecture_id)]
+          : [],
+
+        welfare_benefits_id: Array.isArray(data.welfare_benefits_id)
+          ? data.welfare_benefits_id.map(Number)
+          : [],
+        various_allowances: processedAllowances,
+        updated_at: new Date().toISOString(),
     };
   } else {
     url = `${listBaseUrl}/${id}`;
     dataToSubmit = data;
   }
+  console.log("dataToSubmit : ",dataToSubmit);
 
   try {
     const response = await fetch(url, {

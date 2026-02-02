@@ -40,7 +40,14 @@ export const create = async (
         ? advertisementData.tag_ids.map(Number)
         : [],
     };
-    console.log("Creating advertisement with data:", dataToSubmit);
+  } else if (resource === "company") {
+    const companyId = params.meta?.company_id ?? params.data?.account_id; // フォールバック（渡っていれば利用）
+    if (!companyId)
+      throw new Error("company_id(account_id) が指定されていません");
+    url = `/api/companies/${companyId}`;
+    dataToSubmit = {
+      ...params.data,
+    };
   } else if (resource === "requirements") {
     const requirementData = params.data as Requirement;
     const companyId = requirementData.company_id;
@@ -150,13 +157,13 @@ export const create = async (
     };
     delete dataToSubmit.company_id;
 
-    console.log("Creating requirement with data:", dataToSubmit);
   } else {
     throw new Error(
       `リソース ${resource} の作成はサポートされていません。`
     );
   }
 
+  console.log("Creating with data:", dataToSubmit);
   try {
     const response = await fetch(url, {
       method: "POST",
