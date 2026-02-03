@@ -25,14 +25,14 @@ export const CompanyAccountsCreate = () => {
 
       // 保存成功時の処理
       notify("アカウントが作成されました", { type: "success" });
-      redirect("/company/create"); // companyCreate にリダイレクト
+      redirect("create", "company"); // companyCreate にリダイレクト
     } catch {
       // エラー時の処理
       notify("アカウントの作成に失敗しました", { type: "error" });
     }
   };
   return (
-    <Create>
+    <Create redirect={false}>
       <SimpleForm onSubmit={handleSubmit}>
         <TextInput source="account_name" label="アカウント名" />
         <TextInput source="password" label="パスワード" type="password" />
