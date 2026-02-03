@@ -10,7 +10,7 @@ const GOOGLE_CLIENT_ID =
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <BrowserRouter>
+      <BrowserRouter basename="/school_staff/">
         <App />
       </BrowserRouter>
     </GoogleOAuthProvider>
