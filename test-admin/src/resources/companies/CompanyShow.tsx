@@ -90,7 +90,15 @@ export const CompanyShow = () => {
             label="売上"
             options={{ style: "currency", currency: "JPY" }}
           />
-          <RichTextField source="service_achievement" label="主な事業実績" />
+          <RichTextField
+            source="service_achievement"
+            label="主な事業実績"
+            sx={{
+              whiteSpace: "pre-wrap",
+              display: "block",
+              wordBreak: "break-word",
+            }}
+          />
         </TabbedShowLayout.Tab>
         <TabbedShowLayout.Tab label="求人票一覧">
           <ReferenceManyField

@@ -188,6 +188,7 @@ export const CompanyCreate = () => {
         <TextInput
           source="service_achievement"
           label="主な事業実績"
+          multiline
           placeholder="例：大手企業向けシステム開発"
           helperText="会社の主な事業実績を入力してください"
           validate={validateRequired}
