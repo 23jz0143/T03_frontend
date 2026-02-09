@@ -18,6 +18,7 @@ import {
   Button,
   useRedirect,
   useNotify,
+  RichTextField,
 } from "react-admin";
 import { useEffect } from "react";
 import { Chip, Box, CircularProgress } from "@mui/material";
@@ -291,10 +292,15 @@ export const RequirementShow = () => {
           </TabbedShowLayout.Tab>
 
           <TabbedShowLayout.Tab label="選考・提出物">
-            <TextField
+            <RichTextField
               source="recruitment_flow"
               label="選考フロー"
               emptyText="未登録"
+              sx={{
+                whiteSpace: "pre-wrap",
+                display: "block",
+                wordBreak: "break-word",
+              }}
             />
             <ArrayField source="submission_objects" label="提出物">
               <SingleFieldList linkType={false}>
@@ -308,7 +314,13 @@ export const RequirementShow = () => {
           </TabbedShowLayout.Tab>
 
           <TabbedShowLayout.Tab label="備考">
-            <TextField source="note" label="備考" />
+            <RichTextField source="note" label="備考"
+              sx={{
+                whiteSpace: "pre-wrap",
+                display: "block",
+                wordBreak: "break-word",
+              }}
+            />
           </TabbedShowLayout.Tab>
 
           <TabbedShowLayout.Tab label="日付情報">

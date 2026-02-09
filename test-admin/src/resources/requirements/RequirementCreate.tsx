@@ -317,6 +317,7 @@ export const RequirementCreate = () => {
         <TextInput
           source="recruitment_flow"
           label="採用フロー"
+          multiline
           placeholder="例：書類選考→一次面接→最終面接"
           helperText="選考の流れを入力してください"
           validate={validateRequired}

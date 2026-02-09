@@ -150,6 +150,7 @@ export const AdvertisementCreate = () => {
         <TextInput
           source="briefing_info"
           label="説明会資料URL"
+          multiline
           placeholder="https://example.co.jp/recruit/..."
           helperText="説明会資料のURLがあれば入力してください"
         />

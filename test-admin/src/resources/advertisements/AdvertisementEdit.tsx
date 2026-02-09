@@ -94,6 +94,7 @@ export const AdvertisementEdit = () => {
                         <TextInput
                             source="briefing_info"
                             label="説明会資料URL"
+                            multiline
                             placeholder="https://example.co.jp/recruit/..."
                             helperText="説明会資料のURLがあれば入力してください" />
                         <ReferenceArrayInput source="tag_ids" reference="tags" label="タグ">
