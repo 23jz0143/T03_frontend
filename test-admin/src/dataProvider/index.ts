@@ -10,6 +10,7 @@ import { create } from "./methods/create";
 import { update } from "./methods/update";
 import { deleteOne } from "./methods/delete";
 import { deleteMany } from "./methods/deleteMany";
+import { updateMany } from "./methods/updateMany";
 
 const baseProvider = jsonServerProvider(listBaseUrl);
 
@@ -23,6 +24,7 @@ export const customDataProvider: DataProvider = {
     getManyReference(baseProvider, resource, params),
   create: (resource, params) => create(resource, params),
   update: (resource, params) => update(resource, params),
+  updateMany: (resource, params) => updateMany(resource, params),
   delete: (resource, params) => deleteOne(resource, params),
   deleteMany: (resource, params) => deleteMany(resource, params),
 };
