@@ -17,6 +17,7 @@ import {
   CreateButton,
   DeleteButton,
   useRecordContext,
+  RichTextField,
 } from "react-admin";
 import { Chip, Box, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -149,7 +150,13 @@ export const AdvertisementsShow = () => (
           label="平均有給休暇日数"
           render={(record) => record.average_paid_vacation + " 日"}
         />
-        <TextField source="briefing_info" label="説明会情報" />
+        <RichTextField source="briefing_info" label="説明会情報"
+          sx={{
+            whiteSpace: "pre-wrap",
+            display: "block",
+            wordBreak: "break-word",
+          }}
+        />
         <UrlField source="homepage_url" label="ホームページURL" />
         <FunctionField
           source="mynavi_url"

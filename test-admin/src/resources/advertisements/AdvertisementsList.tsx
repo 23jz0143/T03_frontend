@@ -53,9 +53,9 @@ export const AdvertisementsList = () => {
         />
       ) : (
         <Datagrid rowClick="show" bulkActionButtons={false}>
-          <TextField source="id" label="ID" />
+          {/* <TextField source="id" label="ID" /> */}
           <TextField source="company_name" label="会社名" />
-          <TextField source="company_id" />
+          {/* <TextField source="company_id" /> */}
           <DateField source="updated_at" label="更新日" />
         </Datagrid>
       )}
