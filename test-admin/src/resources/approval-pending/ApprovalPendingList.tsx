@@ -9,6 +9,7 @@ import {
 } from "react-admin";
 
 import { ApprovalPendingEmpty } from "./ApprovalPendingEmpty";
+import { ApprovalBulkActionButtons } from "./ApprovalBulkActionButtons";
 
 const ListActions = () => <TopToolbar></TopToolbar>;
 
@@ -24,7 +25,10 @@ export const ApprovalPendingList = () => {
           linkType="show" // 詳細ページに遷移
         />
       ) : (
-        <Datagrid rowClick="show" bulkActionButtons={false}>
+        <Datagrid
+          rowClick="show"
+          bulkActionButtons={<ApprovalBulkActionButtons />}
+        >
           <TextField source="id" label="ID" />
           <TextField source="company_name" label="会社名" />
           <TextField source="company_id" label="会社ID" />
