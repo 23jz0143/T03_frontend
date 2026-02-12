@@ -48,7 +48,17 @@ export const LoginPage = () => {
   };
 
   return (
-    <Card sx={{ maxWidth: 420, mx: "auto", mt: 10 }}>
+    <Card
+      sx={{
+        maxWidth: 420,
+        mx: "auto",
+        mt: 10,
+        justifyContent: "center",
+        alignItems: "center",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <CardContent>
         <Title title="ログイン" />
         <Typography variant="body2" sx={{ mb: 2 }}>
